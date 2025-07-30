@@ -1,6 +1,6 @@
-'use client';
+'use server';
 
-import { useState } from 'react';
+import { Suspense } from 'react';
 import { Hero } from '@/components/sections/Hero'
 import { Features } from '@/components/sections/Features'
 import { Categories } from '@/components/sections/Categories'
@@ -11,12 +11,16 @@ import { VideoSection } from '@/components/sections/VideoSection'
 import { BlogSection } from '@/components/sections/BlogSection'
 
 export default function HomePage() {
-  const [selectedCategory, setSelectedCategory] = useState<string>('');
-
   return (
     <main>
-      <Hero selectedCategory={selectedCategory} setSelectedCategory={setSelectedCategory} />
-      <Features selectedCategory={selectedCategory} />
+      <Suspense fallback={<div className="h-96 bg-gray-100 animate-pulse rounded-lg" />}>
+        <Hero selectedCategory="" setSelectedCategory={() => {}} />
+      </Suspense>
+      
+      <Suspense fallback={<div className="h-64 bg-gray-50 animate-pulse rounded-lg" />}>
+        <Features selectedCategory="" />
+      </Suspense>
+      
       <Categories />
       <TopInfluencers />
       <Stats />
@@ -24,5 +28,5 @@ export default function HomePage() {
       <VideoSection />
       <BlogSection />
     </main>
-  )
-} 
+  );
+}
