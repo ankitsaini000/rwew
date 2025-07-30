@@ -1,5 +1,8 @@
 import { NextRequest, NextResponse } from "next/server";
 
+// This ensures the route is handled at runtime and not statically optimized
+export const dynamic = 'force-dynamic';
+
 export async function GET(req: NextRequest) {
   try {
     // Extract token from the request
@@ -8,7 +11,7 @@ export async function GET(req: NextRequest) {
     if (!authHeader || !authHeader.startsWith('Bearer ')) {
       return NextResponse.json(
         { message: 'Unauthorized' },
-        { status: 401 }
+        { status: 401, headers: { 'Cache-Control': 'no-store' } }
       );
     }
     
@@ -21,6 +24,8 @@ export async function GET(req: NextRequest) {
         'Content-Type': 'application/json',
         'Authorization': `Bearer ${token}`,
       },
+      // Ensure the response is not cached
+      cache: 'no-store',
     });
     
     if (!response.ok) {
@@ -30,12 +35,12 @@ export async function GET(req: NextRequest) {
           message: 'Failed to fetch profile',
           error: errorData.message || response.statusText,
         },
-        { status: response.status }
+        { status: response.status, headers: { 'Cache-Control': 'no-store' } }
       );
     }
     
     const data = await response.json();
-    return NextResponse.json(data);
+    return NextResponse.json(data, { headers: { 'Cache-Control': 'no-store' } });
     
   } catch (error) {
     console.error('Error fetching profile:', error);
@@ -44,7 +49,7 @@ export async function GET(req: NextRequest) {
         message: 'Internal server error',
         error: error instanceof Error ? error.message : 'Unknown error',
       },
-      { status: 500 }
+      { status: 500, headers: { 'Cache-Control': 'no-store' } }
     );
   }
-} 
+}

@@ -1,32 +1,23 @@
-'use client';
+// This is a server component that renders the client component
+import dynamicImport from 'next/dynamic';
 
-import { Suspense } from 'react';
-import { Hero } from '@/components/sections/Hero'
-import { Features } from '@/components/sections/Features'
-import { Categories } from '@/components/sections/Categories'
-import { TopInfluencers } from '@/components/sections/TopInfluencers'
-import { Stats } from '@/components/sections/Stats'
-import { Testimonials } from '@/components/sections/Testimonials'
-import { VideoSection } from '@/components/sections/VideoSection'
-import { BlogSection } from '@/components/sections/BlogSection'
+// Dynamically import the client component with no SSR
+const MarketingPage = dynamicImport(
+  () => import('./page.client').then((mod) => mod.default),
+  { 
+    ssr: false, // Disable server-side rendering for this component
+    loading: () => (
+      <div className="min-h-screen bg-gray-50">
+        <div className="h-96 bg-gray-100 animate-pulse rounded-lg" />
+        <div className="h-64 bg-gray-50 animate-pulse rounded-lg mt-8" />
+      </div>
+    )
+  }
+);
 
-export default function HomePage() {
-  return (
-    <main>
-      <Suspense fallback={<div className="h-96 bg-gray-100 animate-pulse rounded-lg" />}>
-        <Hero selectedCategory="" setSelectedCategory={() => {}} />
-      </Suspense>
-      
-      <Suspense fallback={<div className="h-64 bg-gray-50 animate-pulse rounded-lg" />}>
-        <Features selectedCategory="" />
-      </Suspense>
-      
-      <Categories />
-      <TopInfluencers />
-      <Stats />
-      <Testimonials />
-      <VideoSection />
-      <BlogSection />
-    </main>
-  );
+// This ensures the page is not statically optimized
+export const dynamic = 'force-dynamic';
+
+export default function Page() {
+  return <MarketingPage />;
 }
