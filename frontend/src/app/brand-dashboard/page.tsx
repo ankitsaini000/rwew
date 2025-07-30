@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect, FormEvent, useRef } from "react";
+import { useState, useEffect, FormEvent, useRef, Suspense } from "react";
 import { DashboardLayout } from "../../components/layout/DashboardLayout";
 import BrandDashboardOverview from "../../components/brand-dashboard/BrandDashboardOverview";
 import BrandVerification from "../../components/brand-dashboard/BrandVerification";
@@ -80,7 +80,7 @@ interface Conversation {
   unreadCount: number;
 }
 
-export default function BrandDashboardPage() {
+function BrandDashboardContent() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const [loading, setLoading] = useState(true);
@@ -897,5 +897,13 @@ export default function BrandDashboardPage() {
         showRetry={false}
       />
     </DashboardLayout>
+  );
+}
+
+export default function BrandDashboardPage() {
+  return (
+    <Suspense fallback={<div className="min-h-screen flex items-center justify-center"><div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-blue-500"></div></div>}>
+      <BrandDashboardContent />
+    </Suspense>
   );
 } 

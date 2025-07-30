@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useState, Suspense } from "react";
 import { useSearchParams, useRouter } from "next/navigation";
 import Link from "next/link";
 import { useAuth } from "@/context/AuthContext";
@@ -32,7 +32,7 @@ interface UserRegistrationData {
 //   };
 // };
 
-export default function RegisterPage() {
+function RegisterForm() {
   const searchParams = useSearchParams();
   const router = useRouter();
   const [userType, setUserType] = useState<"creator" | "brand" | null>(null);
@@ -317,5 +317,13 @@ export default function RegisterPage() {
         )}
       </div>
     </main>
+  );
+}
+
+export default function RegisterPage() {
+  return (
+    <Suspense fallback={<div className="min-h-screen flex items-center justify-center"><div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-blue-500"></div></div>}>
+      <RegisterForm />
+    </Suspense>
   );
 }

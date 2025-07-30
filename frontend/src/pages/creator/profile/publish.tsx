@@ -11,4 +11,11 @@ const PublishProfilePage: NextPage = () => {
   );
 };
 
+export async function getServerSideProps() {
+  // This page requires client-side rendering due to auth and localStorage usage
+  return {
+    props: {}, // will be passed to the page component as props
+  };
+}
+
 export default PublishProfilePage; 

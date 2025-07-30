@@ -1,10 +1,10 @@
 'use client';
 
-import { useEffect } from 'react';
+import { useEffect, Suspense } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { useAuth } from '@/context/AuthContext';
 
-export default function FacebookAuthSuccess() {
+function FacebookAuthSuccessContent() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const token = searchParams?.get('token');
@@ -58,5 +58,13 @@ export default function FacebookAuthSuccess() {
         </p>
       </div>
     </div>
+  );
+}
+
+export default function FacebookAuthSuccess() {
+  return (
+    <Suspense fallback={<div className="min-h-screen flex items-center justify-center"><div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-blue-500"></div></div>}>
+      <FacebookAuthSuccessContent />
+    </Suspense>
   );
 } 
