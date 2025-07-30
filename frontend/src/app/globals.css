@@ -1,0 +1,82 @@
+@import 'tailwindcss/base';
+@import 'tailwindcss/components';
+@import 'tailwindcss/utilities';
+
+:root {
+  --foreground-rgb: 0, 0, 0;
+  --background-start-rgb: 255, 255, 255;
+  --background-end-rgb: 255, 255, 255;
+}
+
+/* Remove dark mode to prevent hydration issues */
+/* @media (prefers-color-scheme: dark) {
+  :root {
+    --foreground-rgb: 255, 255, 255;
+    --background-start-rgb: 0, 0, 0;
+    --background-end-rgb: 0, 0, 0;
+  }
+} */
+
+body {
+  color: rgb(var(--foreground-rgb));
+  background: rgb(var(--background-end-rgb));
+}
+
+@layer utilities {
+  .text-balance {
+    text-wrap: balance;
+  }
+}
+
+/* Custom animations */
+@keyframes fadeIn {
+  from { opacity: 0; transform: translateY(-10px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+@keyframes heartBeat {
+  0% { transform: scale(1); }
+  14% { transform: scale(1.3); }
+  28% { transform: scale(1); }
+  42% { transform: scale(1.3); }
+  70% { transform: scale(1); }
+}
+
+@keyframes heartPulse {
+  0% { transform: scale(1); box-shadow: 0 0 0 0 rgba(255, 99, 71, 0.5); }
+  70% { transform: scale(1.1); box-shadow: 0 0 0 10px rgba(255, 99, 71, 0); }
+  100% { transform: scale(1); box-shadow: 0 0 0 0 rgba(255, 99, 71, 0); }
+}
+
+.animate-fadeIn {
+  animation: fadeIn 0.3s ease-out forwards;
+}
+
+.animate-heartBeat {
+  animation: heartBeat 1s ease-in-out;
+}
+
+.animate-heartPulse {
+  animation: heartPulse 1.5s ease-in-out;
+}
+
+/* Fix SVG width/height "auto" errors */
+svg[width="auto"] {
+  width: 1em;
+}
+
+svg[height="auto"] {
+  height: 1em;
+}
+
+/* Ensure all SVGs have valid dimensions */
+svg:not([width]):not([height]) {
+  width: 1em;
+  height: 1em;
+}
+
+/* Additional SVG fixes */
+svg {
+  max-width: 100%;
+  height: auto;
+}

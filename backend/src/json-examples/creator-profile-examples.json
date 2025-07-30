@@ -1,0 +1,642 @@
+{
+  "basicInfo": {
+    "endpoint": "/api/creators/basic-info",
+    "method": "POST",
+    "payload": {
+      "title": "Professional Instagram Content Creator",
+      "category": "Social Media",
+      "subcategory": "Instagram",
+      "expertise": ["Content Creation", "Social Media Marketing", "Photography"],
+      "level": "expert",
+      "yearsOfExperience": 5,
+      "tags": ["instagram", "social media", "content", "marketing"]
+    }
+  },
+  "pricing": {
+    "endpoint": "/api/creators/pricing",
+    "method": "POST",
+    "payload": {
+      "packages": {
+        "basic": {
+          "name": "Basic Package",
+          "price": 99,
+          "description": "5 high-quality Instagram posts with basic editing",
+          "deliveryTime": 3,
+          "revisions": 1,
+          "features": [
+            "5 high-quality posts",
+            "Basic editing",
+            "Content calendar",
+            "Caption suggestions"
+          ]
+        },
+        "standard": {
+          "name": "Standard Package",
+          "price": 199,
+          "description": "10 premium Instagram posts with advanced editing and strategy",
+          "deliveryTime": 5,
+          "revisions": 2,
+          "features": [
+            "10 premium posts",
+            "Advanced editing",
+            "Content strategy",
+            "Detailed captions",
+            "Hashtag research"
+          ]
+        },
+        "premium": {
+          "name": "Premium Package",
+          "price": 349,
+          "description": "Full Instagram content strategy with 15 posts, stories, and reels",
+          "deliveryTime": 7,
+          "revisions": 3,
+          "features": [
+            "15 premium posts",
+            "5 Instagram stories",
+            "3 Instagram reels",
+            "Complete content strategy",
+            "Hashtag research",
+            "Engagement strategy",
+            "24/7 support"
+          ]
+        }
+      },
+      "customOffers": true
+    }
+  },
+  "description": {
+    "endpoint": "/api/creators/description",
+    "method": "POST",
+    "payload": {
+      "brief": "Professional Instagram content creator with over 5 years of experience helping brands grow their social media presence.",
+      "detailed": "I specialize in creating engaging, high-quality content for Instagram that drives engagement and helps brands stand out in a crowded marketplace. With over 5 years of experience working with brands across various industries, I've developed a strategic approach to content creation that focuses on your target audience and business goals.\n\nMy services include content planning, creation, editing, and strategy. I work closely with each client to understand their brand voice and ensure that all content aligns with their overall marketing objectives. Whether you're looking to increase followers, drive engagement, or convert viewers into customers, I can help you achieve your goals.",
+      "faq": [
+        {
+          "question": "How do you create content that matches my brand?",
+          "answer": "I start with an in-depth brand questionnaire to understand your brand voice, target audience, and goals. Then I create a custom content plan tailored to your specific needs."
+        },
+        {
+          "question": "Can you help with hashtag strategy?",
+          "answer": "Yes! All packages include hashtag research to ensure your content reaches the right audience and maximizes visibility."
+        },
+        {
+          "question": "Do you provide the images or do I need to?",
+          "answer": "I can create content from scratch or work with your existing materials. For custom photography, please select the Premium package or add it as a custom service."
+        }
+      ]
+    }
+  },
+  "requirements": {
+    "endpoint": "/api/creators/requirements",
+    "method": "POST",
+    "payload": {
+      "briefInstructions": "To get started on your Instagram content, I'll need some information about your brand and goals.",
+      "questions": [
+        {
+          "question": "What is your brand name and website?",
+          "required": true
+        },
+        {
+          "question": "Who is your target audience?",
+          "required": true
+        },
+        {
+          "question": "What are your main competitors?",
+          "required": true
+        },
+        {
+          "question": "What are your content goals? (Engagement, followers, sales, etc.)",
+          "required": true
+        },
+        {
+          "question": "Do you have any brand guidelines?",
+          "required": false
+        },
+        {
+          "question": "Are there any specific themes or topics you want to focus on?",
+          "required": false
+        }
+      ],
+      "additionalInfo": "Please also provide any existing content, brand assets, or examples of content you like. The more information you provide, the better I can tailor content to your needs."
+    }
+  },
+  "gallery": {
+    "endpoint": "/api/creators/gallery",
+    "method": "POST",
+    "payload": {
+      "images": [
+        "https://example.com/portfolio/image1.jpg",
+        "https://example.com/portfolio/image2.jpg",
+        "https://example.com/portfolio/image3.jpg",
+        "https://example.com/portfolio/image4.jpg",
+        "https://example.com/portfolio/image5.jpg"
+      ],
+      "videos": [
+        "https://example.com/portfolio/video1.mp4",
+        "https://example.com/portfolio/video2.mp4"
+      ],
+      "portfolioLinks": [
+        {
+          "title": "Fashion Brand Campaign",
+          "url": "https://instagram.com/p/example123"
+        },
+        {
+          "title": "Food Blog Collaboration",
+          "url": "https://instagram.com/p/example456"
+        },
+        {
+          "title": "Travel Series",
+          "url": "https://instagram.com/p/example789"
+        }
+      ]
+    }
+  },
+  "socialInfo": {
+    "endpoint": "/api/creators/social-info",
+    "method": "POST",
+    "payload": {
+      "website": "https://www.johndoe-creator.com",
+      "instagram": "https://instagram.com/johndoe_creator",
+      "twitter": "https://twitter.com/johndoe_creator",
+      "facebook": "https://facebook.com/johndoecreator",
+      "linkedin": "https://linkedin.com/in/johndoe-creator",
+      "youtube": "https://youtube.com/c/johndoecreator",
+      "other": [
+        {
+          "title": "TikTok",
+          "url": "https://tiktok.com/@johndoe_creator"
+        },
+        {
+          "title": "Pinterest",
+          "url": "https://pinterest.com/johndoe_creator"
+        }
+      ],
+      "followersCount": {
+        "instagram": 45000,
+        "twitter": 12000,
+        "facebook": 8500,
+        "youtube": 15000,
+        "linkedin": 3200,
+        "totalFollowers": 83700
+      }
+    }
+  },
+  "personalInfo": {
+    "endpoint": "/api/creators/personal-info",
+    "method": "POST",
+    "payload": {
+      "fullName": "John Doe",
+      "username": "johndoe_creator",
+      "bio": "Instagram content creator and social media strategist helping brands boost engagement and growth.",
+      "profileImage": "https://example.com/profile/john-doe.jpg",
+      "location": "New York, USA",
+      "languages": [
+        {
+          "language": "English",
+          "proficiency": "Native"
+        },
+        {
+          "language": "Spanish",
+          "proficiency": "Intermediate"
+        }
+      ],
+      "skills": [
+        "Content Creation",
+        "Photography",
+        "Social Media Marketing",
+        "Copywriting",
+        "Video Editing",
+        "Brand Strategy"
+      ]
+    }
+  },
+  "completionStatus": {
+    "endpoint": "/api/creators/completion-status",
+    "method": "GET",
+    "response": {
+      "success": true,
+      "data": {
+        "completionStatus": {
+          "basicInfo": true,
+          "pricing": true,
+          "description": true,
+          "requirements": true,
+          "gallery": true,
+          "socialInfo": true,
+          "personalInfo": true
+        },
+        "isReadyToPublish": true
+      }
+    }
+  },
+  "profileData": {
+    "endpoint": "/api/creators/profile-data",
+    "method": "GET",
+    "response": {
+      "success": true,
+      "data": {
+        "_id": "60a3e9b25c2c1844f8b2e0a1",
+        "userId": "60a3e8d45c2c1844f8b2e0a0",
+        "basicInfo": {
+          "title": "Professional Instagram Content Creator",
+          "category": "Social Media",
+          "subcategory": "Instagram",
+          "expertise": ["Content Creation", "Social Media Marketing", "Photography"],
+          "level": "expert",
+          "yearsOfExperience": 5,
+          "tags": ["instagram", "social media", "content", "marketing"]
+        },
+        "pricing": {
+          "packages": {
+            "basic": {
+              "name": "Basic Package",
+              "price": 99,
+              "description": "5 high-quality Instagram posts with basic editing",
+              "deliveryTime": 3,
+              "revisions": 1,
+              "features": [
+                "5 high-quality posts",
+                "Basic editing",
+                "Content calendar",
+                "Caption suggestions"
+              ]
+            },
+            "standard": {
+              "name": "Standard Package",
+              "price": 199,
+              "description": "10 premium Instagram posts with advanced editing and strategy",
+              "deliveryTime": 5,
+              "revisions": 2,
+              "features": [
+                "10 premium posts",
+                "Advanced editing",
+                "Content strategy",
+                "Detailed captions",
+                "Hashtag research"
+              ]
+            },
+            "premium": {
+              "name": "Premium Package",
+              "price": 349,
+              "description": "Full Instagram content strategy with 15 posts, stories, and reels",
+              "deliveryTime": 7,
+              "revisions": 3,
+              "features": [
+                "15 premium posts",
+                "5 Instagram stories",
+                "3 Instagram reels",
+                "Complete content strategy",
+                "Hashtag research",
+                "Engagement strategy",
+                "24/7 support"
+              ]
+            }
+          },
+          "customOffers": true
+        },
+        "description": {
+          "brief": "Professional Instagram content creator with over 5 years of experience helping brands grow their social media presence.",
+          "detailed": "I specialize in creating engaging, high-quality content for Instagram that drives engagement and helps brands stand out in a crowded marketplace. With over 5 years of experience working with brands across various industries, I've developed a strategic approach to content creation that focuses on your target audience and business goals.\n\nMy services include content planning, creation, editing, and strategy. I work closely with each client to understand their brand voice and ensure that all content aligns with their overall marketing objectives. Whether you're looking to increase followers, drive engagement, or convert viewers into customers, I can help you achieve your goals.",
+          "faq": [
+            {
+              "question": "How do you create content that matches my brand?",
+              "answer": "I start with an in-depth brand questionnaire to understand your brand voice, target audience, and goals. Then I create a custom content plan tailored to your specific needs."
+            },
+            {
+              "question": "Can you help with hashtag strategy?",
+              "answer": "Yes! All packages include hashtag research to ensure your content reaches the right audience and maximizes visibility."
+            },
+            {
+              "question": "Do you provide the images or do I need to?",
+              "answer": "I can create content from scratch or work with your existing materials. For custom photography, please select the Premium package or add it as a custom service."
+            }
+          ]
+        },
+        "requirements": {
+          "briefInstructions": "To get started on your Instagram content, I'll need some information about your brand and goals.",
+          "questions": [
+            {
+              "question": "What is your brand name and website?",
+              "required": true
+            },
+            {
+              "question": "Who is your target audience?",
+              "required": true
+            },
+            {
+              "question": "What are your main competitors?",
+              "required": true
+            },
+            {
+              "question": "What are your content goals? (Engagement, followers, sales, etc.)",
+              "required": true
+            },
+            {
+              "question": "Do you have any brand guidelines?",
+              "required": false
+            },
+            {
+              "question": "Are there any specific themes or topics you want to focus on?",
+              "required": false
+            }
+          ],
+          "additionalInfo": "Please also provide any existing content, brand assets, or examples of content you like. The more information you provide, the better I can tailor content to your needs."
+        },
+        "gallery": {
+          "images": [
+            "https://example.com/portfolio/image1.jpg",
+            "https://example.com/portfolio/image2.jpg",
+            "https://example.com/portfolio/image3.jpg",
+            "https://example.com/portfolio/image4.jpg",
+            "https://example.com/portfolio/image5.jpg"
+          ],
+          "videos": [
+            "https://example.com/portfolio/video1.mp4",
+            "https://example.com/portfolio/video2.mp4"
+          ],
+          "portfolioLinks": [
+            {
+              "title": "Fashion Brand Campaign",
+              "url": "https://instagram.com/p/example123"
+            },
+            {
+              "title": "Food Blog Collaboration",
+              "url": "https://instagram.com/p/example456"
+            },
+            {
+              "title": "Travel Series",
+              "url": "https://instagram.com/p/example789"
+            }
+          ]
+        },
+        "socialInfo": {
+          "website": "https://www.johndoe-creator.com",
+          "instagram": "https://instagram.com/johndoe_creator",
+          "twitter": "https://twitter.com/johndoe_creator",
+          "facebook": "https://facebook.com/johndoecreator",
+          "linkedin": "https://linkedin.com/in/johndoe-creator",
+          "youtube": "https://youtube.com/c/johndoecreator",
+          "other": [
+            {
+              "title": "TikTok",
+              "url": "https://tiktok.com/@johndoe_creator"
+            },
+            {
+              "title": "Pinterest",
+              "url": "https://pinterest.com/johndoe_creator"
+            }
+          ],
+          "followersCount": {
+            "instagram": 45000,
+            "twitter": 12000,
+            "facebook": 8500,
+            "youtube": 15000,
+            "linkedin": 3200,
+            "totalFollowers": 83700
+          }
+        },
+        "personalInfo": {
+          "fullName": "John Doe",
+          "username": "johndoe_creator",
+          "bio": "Instagram content creator and social media strategist helping brands boost engagement and growth.",
+          "profileImage": "https://example.com/profile/john-doe.jpg",
+          "location": "New York, USA",
+          "languages": [
+            {
+              "language": "English",
+              "proficiency": "Native"
+            },
+            {
+              "language": "Spanish",
+              "proficiency": "Intermediate"
+            }
+          ],
+          "skills": [
+            "Content Creation",
+            "Photography",
+            "Social Media Marketing",
+            "Copywriting",
+            "Video Editing",
+            "Brand Strategy"
+          ]
+        },
+        "completionStatus": {
+          "basicInfo": true,
+          "pricing": true,
+          "description": true,
+          "requirements": true,
+          "gallery": true,
+          "socialInfo": true,
+          "personalInfo": true
+        },
+        "status": "draft",
+        "isVerified": false,
+        "rating": 5.0,
+        "reviews": 0,
+        "createdAt": "2023-05-18T12:00:00.000Z",
+        "updatedAt": "2023-05-20T14:30:00.000Z"
+      }
+    }
+  },
+  "publishProfile": {
+    "endpoint": "/api/creators/publish",
+    "method": "PUT",
+    "response": {
+      "success": true,
+      "data": {
+        "profile": {
+          "_id": "60a3e9b25c2c1844f8b2e0a1",
+          "userId": "60a3e8d45c2c1844f8b2e0a0",
+          "status": "published",
+          "profileUrl": "/creators/johndoe_creator",
+          "publishedAt": "2023-05-20T15:45:00.000Z",
+          "basicInfo": {},
+          "pricing": {},
+          "description": {},
+          "requirements": {},
+          "gallery": {},
+          "socialInfo": {},
+          "personalInfo": {}
+        },
+        "profileUrl": "/creators/johndoe_creator"
+      }
+    }
+  },
+  "publicProfile": {
+    "endpoint": "/api/creators/johndoe_creator",
+    "method": "GET",
+    "response": {
+      "success": true,
+      "data": {
+        "_id": "60a3e9b25c2c1844f8b2e0a1",
+        "userId": {
+          "_id": "60a3e8d45c2c1844f8b2e0a0",
+          "fullName": "John Doe",
+          "email": "john@example.com",
+          "avatar": "https://example.com/profile/john-doe.jpg"
+        },
+        "basicInfo": {
+          "title": "Professional Instagram Content Creator",
+          "category": "Social Media",
+          "subcategory": "Instagram",
+          "expertise": ["Content Creation", "Social Media Marketing", "Photography"],
+          "level": "expert",
+          "yearsOfExperience": 5,
+          "tags": ["instagram", "social media", "content", "marketing"]
+        },
+        "pricing": {
+          "packages": {
+            "basic": {
+              "name": "Basic Package",
+              "price": 99,
+              "description": "5 high-quality Instagram posts with basic editing",
+              "deliveryTime": 3,
+              "revisions": 1,
+              "features": [
+                "5 high-quality posts",
+                "Basic editing",
+                "Content calendar",
+                "Caption suggestions"
+              ]
+            },
+            "standard": {
+              "name": "Standard Package",
+              "price": 199,
+              "description": "10 premium Instagram posts with advanced editing and strategy",
+              "deliveryTime": 5,
+              "revisions": 2,
+              "features": [
+                "10 premium posts",
+                "Advanced editing",
+                "Content strategy",
+                "Detailed captions",
+                "Hashtag research"
+              ]
+            },
+            "premium": {
+              "name": "Premium Package",
+              "price": 349,
+              "description": "Full Instagram content strategy with 15 posts, stories, and reels",
+              "deliveryTime": 7,
+              "revisions": 3,
+              "features": [
+                "15 premium posts",
+                "5 Instagram stories",
+                "3 Instagram reels",
+                "Complete content strategy",
+                "Hashtag research",
+                "Engagement strategy",
+                "24/7 support"
+              ]
+            }
+          },
+          "customOffers": true
+        },
+        "description": {
+          "brief": "Professional Instagram content creator with over 5 years of experience helping brands grow their social media presence.",
+          "detailed": "I specialize in creating engaging, high-quality content for Instagram that drives engagement and helps brands stand out in a crowded marketplace. With over 5 years of experience working with brands across various industries, I've developed a strategic approach to content creation that focuses on your target audience and business goals.\n\nMy services include content planning, creation, editing, and strategy. I work closely with each client to understand their brand voice and ensure that all content aligns with their overall marketing objectives. Whether you're looking to increase followers, drive engagement, or convert viewers into customers, I can help you achieve your goals.",
+          "faq": [
+            {
+              "question": "How do you create content that matches my brand?",
+              "answer": "I start with an in-depth brand questionnaire to understand your brand voice, target audience, and goals. Then I create a custom content plan tailored to your specific needs."
+            },
+            {
+              "question": "Can you help with hashtag strategy?",
+              "answer": "Yes! All packages include hashtag research to ensure your content reaches the right audience and maximizes visibility."
+            },
+            {
+              "question": "Do you provide the images or do I need to?",
+              "answer": "I can create content from scratch or work with your existing materials. For custom photography, please select the Premium package or add it as a custom service."
+            }
+          ]
+        },
+        "gallery": {
+          "images": [
+            "https://example.com/portfolio/image1.jpg",
+            "https://example.com/portfolio/image2.jpg",
+            "https://example.com/portfolio/image3.jpg",
+            "https://example.com/portfolio/image4.jpg",
+            "https://example.com/portfolio/image5.jpg"
+          ],
+          "videos": [
+            "https://example.com/portfolio/video1.mp4",
+            "https://example.com/portfolio/video2.mp4"
+          ],
+          "portfolioLinks": [
+            {
+              "title": "Fashion Brand Campaign",
+              "url": "https://instagram.com/p/example123"
+            },
+            {
+              "title": "Food Blog Collaboration",
+              "url": "https://instagram.com/p/example456"
+            },
+            {
+              "title": "Travel Series",
+              "url": "https://instagram.com/p/example789"
+            }
+          ]
+        },
+        "socialInfo": {
+          "website": "https://www.johndoe-creator.com",
+          "instagram": "https://instagram.com/johndoe_creator",
+          "twitter": "https://twitter.com/johndoe_creator",
+          "facebook": "https://facebook.com/johndoecreator",
+          "linkedin": "https://linkedin.com/in/johndoe-creator",
+          "youtube": "https://youtube.com/c/johndoecreator",
+          "other": [
+            {
+              "title": "TikTok",
+              "url": "https://tiktok.com/@johndoe_creator"
+            },
+            {
+              "title": "Pinterest",
+              "url": "https://pinterest.com/johndoe_creator"
+            }
+          ],
+          "followersCount": {
+            "instagram": 45000,
+            "twitter": 12000,
+            "facebook": 8500,
+            "youtube": 15000,
+            "linkedin": 3200,
+            "totalFollowers": 83700
+          }
+        },
+        "personalInfo": {
+          "fullName": "John Doe",
+          "username": "johndoe_creator",
+          "bio": "Instagram content creator and social media strategist helping brands boost engagement and growth.",
+          "profileImage": "https://example.com/profile/john-doe.jpg",
+          "location": "New York, USA",
+          "languages": [
+            {
+              "language": "English",
+              "proficiency": "Native"
+            },
+            {
+              "language": "Spanish",
+              "proficiency": "Intermediate"
+            }
+          ],
+          "skills": [
+            "Content Creation",
+            "Photography",
+            "Social Media Marketing",
+            "Copywriting",
+            "Video Editing",
+            "Brand Strategy"
+          ]
+        },
+        "status": "published",
+        "isVerified": false,
+        "rating": 5.0,
+        "reviews": 0,
+        "profileUrl": "/creators/johndoe_creator",
+        "publishedAt": "2023-05-20T15:45:00.000Z",
+        "createdAt": "2023-05-18T12:00:00.000Z",
+        "updatedAt": "2023-05-20T15:45:00.000Z"
+      }
+    }
+  }
+} 
