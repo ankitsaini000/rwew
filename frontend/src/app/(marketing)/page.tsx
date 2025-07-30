@@ -1,4 +1,4 @@
-'use server';
+'use client';
 
 import { Suspense } from 'react';
 import { Hero } from '@/components/sections/Hero'
