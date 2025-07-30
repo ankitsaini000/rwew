@@ -49,6 +49,9 @@
 /** @type {import('next').NextConfig} */
 const nextConfig = {
   reactStrictMode: true,
+  // Enable output file tracing for better deployment
+  output: 'standalone',
+  // Configure images
   images: {
     domains: [
       'localhost',
@@ -58,33 +61,75 @@ const nextConfig = {
       'via.placeholder.com',
       'cloudinary.com',
       'res.cloudinary.com',
-      'platform-lookaside.fbsbx.com', // Facebook profile images
-      'graph.facebook.com',           // Alternative Facebook image domain
-      'dgzcfva4b.cloudinary.net'     // Your specific Cloudinary cloud name
+      'platform-lookaside.fbsbx.com',
+      'graph.facebook.com',
+      'dgzcfva4b.cloudinary.net'
     ],
   },
+  // Compiler configuration
   compiler: {
     styledComponents: true,
-    // ❌ Remove this line — it's not valid:
-    // ignoreDuringBuilds: true,
   },
+  // Experimental features
   experimental: {
-    largePageDataBytes: 128 * 1000, // default is 128KB
+    largePageDataBytes: 256 * 1000, // Increased from 128KB to 256KB
+    // Enable server actions
+    serverActions: true,
+    // Enable new next link behavior
+    newNextLinkBehavior: true,
+    // Improve build performance
+    optimizeCss: true,
+    // Improve build performance
+    optimizePackageImports: [
+      'react-icons',
+      'lucide-react',
+      '@heroicons/react',
+      'date-fns'
+    ],
   },
+  // API rewrites
   async rewrites() {
     return [
       {
         source: '/api/:path*',
-        destination: 'http://localhost:5000/api/:path*',
+        destination: process.env.NEXT_PUBLIC_API_URL ? 
+          `${process.env.NEXT_PUBLIC_API_URL}/:path*` : 
+          'http://localhost:5000/api/:path*',
       },
     ];
   },
-  webpack: (config) => {
+  // Webpack configuration
+  webpack: (config, { isServer }) => {
+    // Enable top-level await
     config.experiments = {
       ...config.experiments,
       topLevelAwait: true,
     };
+
+    // Fix for client reference manifest in production
+    if (!isServer) {
+      config.resolve.fallback = {
+        ...config.resolve.fallback,
+        fs: false,
+        module: false,
+        tls: false,
+        net: false,
+        dns: false,
+        child_process: false,
+      };
+    }
+
     return config;
+  },
+  // Disable static optimization for problematic pages
+  experimental: {
+    serverComponentsExternalPackages: ['mongoose'],
+    serverActions: true,
+  },
+  // Configure page data cache
+  onDemandEntries: {
+    maxInactiveAge: 25 * 1000,
+    pagesBufferLength: 2,
   },
 };
 
