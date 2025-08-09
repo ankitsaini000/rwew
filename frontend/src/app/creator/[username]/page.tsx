@@ -2145,7 +2145,7 @@ export default function CreatorProfilePage({ params }: { params: { username: str
         ) : (
           <div className="pb-16">
             {/* Hero Banner Section */}
-            <section className="relative h-60 md:h-80 w-full bg-gradient-to-r from-indigo-600 via-purple-600 to-pink-500 overflow-hidden">
+            <section className="relative h-40 md:h-60 w-full bg-gradient-to-r from-indigo-600 via-purple-600 to-pink-500 overflow-hidden">  {/* Reduced height from h-60 md:h-80 to h-40 md:h-60 */}
               {creator?.personalInfo?.coverImage ? (
                 <img 
                   src={processImageUrl(creator.personalInfo.coverImage)} 
@@ -2157,7 +2157,7 @@ export default function CreatorProfilePage({ params }: { params: { username: str
             </section>
             
             {/* Profile Header Section */}
-            <section className="max-w-7xl mx-auto px-4 relative -mt-16 z-10 mb-12">
+            <section className="max-w-7xl mx-auto px-4 relative -mt-12 z-10 mb-8">  {/* Adjusted margin-top from -mt-16 to -mt-12 and bottom margin from mb-12 to mb-8 */}
               <div className="bg-white rounded-xl shadow-md overflow-hidden">
                 <div className="p-6 sm:p-8">
                   <div className="flex flex-col md:flex-row items-center md:items-start gap-6">
@@ -2199,7 +2199,7 @@ export default function CreatorProfilePage({ params }: { params: { username: str
 
                         <p className="text-gray-500">@{username}</p>
                         {/* Categories under username */}
-                        {getCreatorCategoryNames().length > 0 && (
+                        {/* {getCreatorCategoryNames().length > 0 && (
                           <div className="flex flex-wrap gap-2 mt-2 justify-center md:justify-start">
                             {getCreatorCategoryNames().map((categoryName: string, idx: number) => (
                               <span key={idx} className="bg-blue-50 text-blue-700 px-3 py-1 rounded-full text-sm border border-blue-200">
@@ -2207,7 +2207,7 @@ export default function CreatorProfilePage({ params }: { params: { username: str
                               </span>
                             ))}
                           </div>
-                        )}
+                        )} */}
                         
                         {creator?.professionalInfo?.title && (
                           <p className="text-purple-600 font-medium text-lg">
@@ -2334,7 +2334,7 @@ export default function CreatorProfilePage({ params }: { params: { username: str
                           {/* Lead Time */}
                           {creator.professionalInfo.eventAvailability.leadTime !== undefined && (
                             <div className="mb-2">
-                              <strong>Lead Time:</strong> <span className="ml-1">{creator.professionalInfo.eventAvailability.leadTime} days</span>
+                              {/* <strong>Lead Time:</strong> <span className="ml-1">{creator.professionalInfo.eventAvailability.leadTime} days</span> */}
                             </div>
                           )}
                         </div>
@@ -2689,7 +2689,7 @@ export default function CreatorProfilePage({ params }: { params: { username: str
                       fullName={creator.name || creator.personalInfo?.username || ''}
                       avatar={creator.avatar || creator.personalInfo?.profileImage}
                       categories={creator.professionalInfo?.categories || []}
-                      level={creator.level || creator.professionalInfo?.title || ''}
+                      // level={creator.level || creator.professionalInfo?.title || ''}
                       description={creator.description || creator.descriptionFaq?.briefDescription || ''}
                       rating={creator.rating || creator.metrics?.ratings?.average || 0}
                       reviewCount={Array.isArray(creator.reviews) ? creator.reviews.length : (creator.reviews || creator.metrics?.ratings?.count || 0)}
@@ -2765,7 +2765,7 @@ export default function CreatorProfilePage({ params }: { params: { username: str
                       className="w-20 h-20 rounded-full object-cover mb-3"
                     />
                     <h3 className="font-semibold text-gray-900 text-lg mb-1">{c.name || c.personalInfo?.fullName || c.username}</h3>
-                    <p className="text-xs text-gray-500 mb-1">@{c.username}</p>
+                    <p className="text-xs text-gray-500 mb-1">{c.username}</p>
                     <p className="text-xs text-purple-600 mb-1">{c.category || c.professionalInfo?.categories?.[0]}</p>
                     <p className="text-xs text-gray-500">{c.professionalInfo?.title}</p>
                   </div>
@@ -2778,4 +2778,4 @@ export default function CreatorProfilePage({ params }: { params: { username: str
       </DashboardLayout>
     </div>
   );
-} 
+}

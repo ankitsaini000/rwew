@@ -15,23 +15,6 @@ interface UserRegistrationData {
   role?: string;
 }
 
-// Remove mock function and use real API
-// const mockRegisterUser = async (userData: UserRegistrationData) => {
-//   // Simulate API delay
-//   await new Promise(resolve => setTimeout(resolve, 1000));
-//   
-//   // Return mock successful response
-//   return {
-//     token: "mock-jwt-token",
-//     user: {
-//       id: "mock-user-id",
-//       name: userData.name,
-//       email: userData.email,
-//       role: userData.role
-//     }
-//   };
-// };
-
 function RegisterForm() {
   const searchParams = useSearchParams();
   const router = useRouter();
@@ -134,17 +117,25 @@ function RegisterForm() {
   };
 
   return (
-    <main className="flex min-h-screen flex-col items-center justify-center p-6 sm:p-24 bg-gradient-to-br from-purple-50 via-white to-purple-50">
-      <div className="max-w-md w-full space-y-8 bg-white p-8 rounded-xl shadow-md">
+    <main className="min-h-screen flex flex-col items-center justify-center p-4 sm:p-6 md:p-8 lg:p-10 relative overflow-hidden">
+      {/* Animated background elements */}
+      <div className="absolute top-0 left-0 w-full h-full overflow-hidden z-0 pointer-events-none">
+        <div className="absolute top-20 left-10 w-96 h-96 bg-purple-200 rounded-full mix-blend-multiply filter blur-3xl opacity-20 animate-float"></div>
+        <div className="absolute top-40 right-10 w-120 h-120 bg-blue-200 rounded-full mix-blend-multiply filter blur-3xl opacity-20 animate-float" style={{animationDelay: '1s'}}></div>
+        <div className="absolute bottom-20 left-1/4 w-80 h-80 bg-pink-200 rounded-full mix-blend-multiply filter blur-3xl opacity-20 animate-float" style={{animationDelay: '2s'}}></div>
+        <div className="absolute bottom-40 right-1/4 w-64 h-64 bg-yellow-200 rounded-full mix-blend-multiply filter blur-3xl opacity-10 animate-float" style={{animationDelay: '3s'}}></div>
+      </div>
+      
+      <div className="glass-morphism max-w-md w-full space-y-6 p-5 sm:p-6 md:p-8 animate-fadeIn relative z-10 mx-4 sm:mx-auto">
         <div>
-          <h2 className="mt-6 text-center text-3xl font-extrabold text-gray-900">
+          <h2 className="mt-2 text-center text-2xl sm:text-3xl font-extrabold bg-clip-text text-transparent bg-gradient-to-r from-purple-600 to-blue-500">
             {userType === "creator"
               ? "Join as an Influencer"
               : userType === "brand"
               ? "Register as a Brand"
               : "Create your account"}
           </h2>
-          <p className="mt-2 text-center text-sm text-gray-600">
+          <p className="mt-2 text-center text-xs sm:text-sm text-gray-600">
             {userType === "creator"
               ? "Showcase your talent and connect with brands"
               : userType === "brand"
@@ -153,32 +144,32 @@ function RegisterForm() {
           </p>
 
           {!userType && (
-            <div className="mt-6 flex flex-col space-y-4">
+            <div className="mt-6 sm:mt-8 flex flex-col space-y-4 animate-fadeInUp">
               <button
                 onClick={() => setUserType("creator")}
-                className="group relative flex w-full justify-center rounded-md bg-gradient-to-r from-purple-600 to-pink-600 py-3 px-4 text-sm font-medium text-white hover:opacity-90 focus:outline-none"
+                className="group relative flex w-full justify-center rounded-lg py-2.5 sm:py-3 px-4 text-sm sm:text-base font-medium text-white bg-gradient-to-r from-purple-600 to-blue-500 hover:from-purple-700 hover:to-blue-600 focus:outline-none shadow-md hover:shadow-lg transition-all duration-300 transform hover:-translate-y-0.5"
               >
                 Join as Influencer
               </button>
               <button
                 onClick={() => setUserType("brand")}
-                className="group relative flex w-full justify-center rounded-md border-2 border-purple-600 py-3 px-4 text-sm font-medium text-purple-600 hover:bg-purple-50 focus:outline-none"
+                className="glass-button group relative flex w-full justify-center rounded-lg py-2.5 sm:py-3 px-4 text-sm sm:text-base font-medium text-purple-600 hover:text-purple-700 border-2 border-purple-200 hover:border-purple-300 focus:outline-none transition-all duration-300 transform hover:-translate-y-0.5"
               >
                 Register as Brand
               </button>
               
-              <div className="relative flex items-center">
+              <div className="relative flex items-center py-2">
                 <div className="flex-grow border-t border-gray-300"></div>
-                <span className="flex-shrink mx-4 text-gray-400">or</span>
+                <span className="flex-shrink mx-4 text-gray-500 text-xs sm:text-sm">or</span>
                 <div className="flex-grow border-t border-gray-300"></div>
               </div>
               
               <button
                 type="button"
                 onClick={handleFacebookLogin}
-                className="group relative w-full flex items-center justify-center py-3 px-4 border border-transparent text-sm font-medium rounded-md text-white bg-[#4267B2] hover:bg-[#3b5998] focus:outline-none"
+                className="group relative w-full flex items-center justify-center py-2.5 sm:py-3 px-4 border border-transparent text-sm sm:text-base font-medium rounded-lg text-white bg-[#4267B2] hover:bg-[#3b5998] focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-[#4267B2] transition-all duration-300 shadow-md hover:shadow-lg transform hover:-translate-y-0.5"
               >
-                <FaFacebook className="h-5 w-5 mr-2" />
+                <FaFacebook className="h-4 w-4 sm:h-5 sm:w-5 mr-2" />
                 Continue with Facebook
               </button>
             </div>
@@ -188,14 +179,14 @@ function RegisterForm() {
         {userType && (
           <>
             {error && (
-              <div className="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded relative">
+              <div className="bg-red-50 backdrop-blur-sm bg-opacity-70 border border-red-200 text-red-700 px-3 py-2 rounded-lg text-sm animate-fadeIn">
                 {error}
               </div>
             )}
-            <form className="mt-8 space-y-6" onSubmit={handleSubmit}>
-              <div className="rounded-md shadow-sm -space-y-px">
+            <form className="mt-6 space-y-5 animate-fadeIn" onSubmit={handleSubmit}>
+              <div className="rounded-lg shadow-sm space-y-4">
                 <div>
-                  <label htmlFor="fullName" className="sr-only">
+                  <label htmlFor="fullName" className="block text-sm font-medium text-gray-700 mb-1 ml-1">
                     Full Name
                   </label>
                   <input
@@ -203,14 +194,14 @@ function RegisterForm() {
                     name="fullName"
                     type="text"
                     required
-                    className="appearance-none rounded-none relative block w-full px-3 py-2 border border-gray-300 placeholder-gray-500 text-gray-900 rounded-t-md focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 focus:z-10 sm:text-sm"
+                    className="glass-input appearance-none relative block w-full px-4 py-2.5 sm:py-3 rounded-lg text-gray-900 focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-transparent transition-all duration-300 text-sm sm:text-base"
                     placeholder="Full Name"
                     value={formData.fullName}
                     onChange={handleChange}
                   />
                 </div>
                 <div>
-                  <label htmlFor="email-address" className="sr-only">
+                  <label htmlFor="email-address" className="block text-sm font-medium text-gray-700 mb-1 ml-1">
                     Email address
                   </label>
                   <input
@@ -219,7 +210,7 @@ function RegisterForm() {
                     type="email"
                     autoComplete="email"
                     required
-                    className="appearance-none rounded-none relative block w-full px-3 py-2 border border-gray-300 placeholder-gray-500 text-gray-900 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 focus:z-10 sm:text-sm"
+                    className="glass-input appearance-none relative block w-full px-4 py-2.5 sm:py-3 rounded-lg text-gray-900 focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-transparent transition-all duration-300 text-sm sm:text-base"
                     placeholder="Email address"
                     value={formData.email}
                     onChange={handleChange}
@@ -228,7 +219,7 @@ function RegisterForm() {
                 {/* Conditionally render username field for brands */}
                 {userType === "brand" && (
                   <div>
-                    <label htmlFor="username" className="sr-only">
+                    <label htmlFor="username" className="block text-sm font-medium text-gray-700 mb-1 ml-1">
                       Username
                     </label>
                     <input
@@ -236,7 +227,7 @@ function RegisterForm() {
                       name="username"
                       type="text"
                       required
-                      className="appearance-none rounded-none relative block w-full px-3 py-2 border border-gray-300 placeholder-gray-500 text-gray-900 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 focus:z-10 sm:text-sm"
+                      className="glass-input appearance-none relative block w-full px-4 py-2.5 sm:py-3 rounded-lg text-gray-900 focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-transparent transition-all duration-300 text-sm sm:text-base"
                       placeholder="Username (for brand profile)"
                       value={formData.username}
                       onChange={handleChange}
@@ -244,7 +235,7 @@ function RegisterForm() {
                   </div>
                 )}
                 <div>
-                  <label htmlFor="password" className="sr-only">
+                  <label htmlFor="password" className="block text-sm font-medium text-gray-700 mb-1 ml-1">
                     Password
                   </label>
                   <input
@@ -253,14 +244,14 @@ function RegisterForm() {
                     type="password"
                     autoComplete="new-password"
                     required
-                    className="appearance-none rounded-none relative block w-full px-3 py-2 border border-gray-300 placeholder-gray-500 text-gray-900 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 focus:z-10 sm:text-sm"
+                    className="glass-input appearance-none relative block w-full px-4 py-2.5 sm:py-3 rounded-lg text-gray-900 focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-transparent transition-all duration-300 text-sm sm:text-base"
                     placeholder="Password"
                     value={formData.password}
                     onChange={handleChange}
                   />
                 </div>
                 <div>
-                  <label htmlFor="confirmPassword" className="sr-only">
+                  <label htmlFor="confirmPassword" className="block text-sm font-medium text-gray-700 mb-1 ml-1">
                     Confirm Password
                   </label>
                   <input
@@ -269,7 +260,7 @@ function RegisterForm() {
                     type="password"
                     autoComplete="new-password"
                     required
-                    className="appearance-none rounded-none relative block w-full px-3 py-2 border border-gray-300 placeholder-gray-500 text-gray-900 rounded-b-md focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 focus:z-10 sm:text-sm"
+                    className="glass-input appearance-none relative block w-full px-4 py-2.5 sm:py-3 rounded-lg text-gray-900 focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-transparent transition-all duration-300 text-sm sm:text-base"
                     placeholder="Confirm Password"
                     value={formData.confirmPassword}
                     onChange={handleChange}
@@ -281,15 +272,23 @@ function RegisterForm() {
                 <button
                   type="submit"
                   disabled={loading}
-                  className="group relative w-full flex justify-center py-2 px-4 border border-transparent text-sm font-medium rounded-md text-white bg-purple-600 hover:bg-purple-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-purple-500 disabled:bg-purple-400"
+                  className="group relative w-full flex justify-center py-2.5 sm:py-3 px-4 border border-transparent text-sm sm:text-base font-medium rounded-lg text-white bg-gradient-to-r from-purple-600 to-blue-500 hover:from-purple-700 hover:to-blue-600 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-purple-500 disabled:opacity-70 transition-all duration-300 shadow-md hover:shadow-lg transform hover:-translate-y-0.5"
                 >
-                  {loading ? "Creating account..." : "Create account"}
+                  {loading ? (
+                    <>
+                      <svg className="animate-spin -ml-1 mr-2 h-4 w-4 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                        <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                        <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                      </svg>
+                      Creating account...
+                    </>
+                  ) : 'Create account'}
                 </button>
               </div>
               
-              <div className="relative flex items-center">
+              <div className="relative flex items-center py-2">
                 <div className="flex-grow border-t border-gray-300"></div>
-                <span className="flex-shrink mx-4 text-gray-400">or</span>
+                <span className="flex-shrink mx-4 text-gray-500 text-xs sm:text-sm">or</span>
                 <div className="flex-grow border-t border-gray-300"></div>
               </div>
               
@@ -297,17 +296,17 @@ function RegisterForm() {
                 <button
                   type="button"
                   onClick={handleFacebookLogin}
-                  className="group relative w-full flex items-center justify-center py-2 px-4 border border-transparent text-sm font-medium rounded-md text-white bg-[#4267B2] hover:bg-[#3b5998] focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-[#4267B2]"
+                  className="group relative w-full flex items-center justify-center py-2.5 sm:py-3 px-4 border border-transparent text-sm sm:text-base font-medium rounded-lg text-white bg-[#4267B2] hover:bg-[#3b5998] focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-[#4267B2] transition-all duration-300 shadow-md hover:shadow-lg transform hover:-translate-y-0.5"
                 >
-                  <FaFacebook className="h-5 w-5 mr-2" />
+                  <FaFacebook className="h-4 w-4 sm:h-5 sm:w-5 mr-2" />
                   Continue with Facebook
                 </button>
               </div>
 
               <div className="text-center">
-                <p className="mt-2 text-sm text-gray-600">
+                <p className="mt-2 text-xs sm:text-sm text-gray-600">
                   Already have an account?{" "}
-                  <Link href="/login" className="font-medium text-purple-600 hover:text-purple-500">
+                  <Link href="/login" className="font-medium text-purple-600 hover:text-purple-500 transition-colors">
                     Sign in
                   </Link>
                 </p>
@@ -322,7 +321,11 @@ function RegisterForm() {
 
 export default function RegisterPage() {
   return (
-    <Suspense fallback={<div className="min-h-screen flex items-center justify-center"><div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-blue-500"></div></div>}>
+    <Suspense fallback={
+      <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-purple-50 via-white to-blue-50">
+        <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-purple-500"></div>
+      </div>
+    }>
       <RegisterForm />
     </Suspense>
   );

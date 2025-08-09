@@ -44,6 +44,7 @@ import targetAudienceGenderRoutes from './routes/targetAudienceGenderRoutes';
 import targetAudienceAgeRangeRoutes from './routes/targetAudienceAgeRangeRoutes';
 import socialMediaPreferenceRoutes from './routes/socialMediaPreferenceRoutes';
 import creatorBankAccountRoutes from './routes/creatorBankAccountRoutes';
+import searchHistoryRoutes from './routes/searchHistoryRoutes';
 
 // Load environment variables
 dotenv.config();
@@ -166,6 +167,7 @@ app.use('/api/target-audience-genders', targetAudienceGenderRoutes);
 app.use('/api/target-audience-age-ranges', targetAudienceAgeRangeRoutes);
 app.use('/api/social-media-preferences', socialMediaPreferenceRoutes);
 app.use('/api/creator-bank-accounts', creatorBankAccountRoutes);
+app.use('/api/search-history', searchHistoryRoutes);
 
 // Add debug logging for the route path
 console.log('Mounting creator-dashboard routes at: /api/creator-dashboard');

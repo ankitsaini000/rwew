@@ -41,15 +41,16 @@ API.interceptors.response.use(
   },
   (error) => {
     const url = error.config?.url || '';
-    // Suppress toasts for login/auth endpoints, brand-experience-reviews, and reviews/order
+    // Suppress toasts for login/auth endpoints, brand-experience-reviews, reviews/order, and dashboard endpoints
     const isAuthEndpoint = url.includes('/login') || url.includes('/auth/login');
     const isBrandExperienceReviews = url.includes('brand-experience-reviews');
     const isReviewsOrder = url.includes('reviews/order');
+    const isDashboardEndpoint = url.includes('dashboard-recommendations') || url.includes('dashboard-profiles-you-may-like');
     
     if (error.response) {
       const status = error.response.status;
-      // Only show toasts for non-auth endpoints, non-brand-experience-reviews, and non-reviews/order
-      if (!isAuthEndpoint && !isBrandExperienceReviews && !isReviewsOrder) {
+      // Only show toasts for non-suppressed endpoints
+      if (!isAuthEndpoint && !isBrandExperienceReviews && !isReviewsOrder && !isDashboardEndpoint) {
         switch (status) {
           case 401:
             toast.error('Authentication required. Please login.');
@@ -68,11 +69,11 @@ API.interceptors.response.use(
         }
       }
     } else if (error.code === 'ECONNABORTED') {
-      if (!isAuthEndpoint && !isBrandExperienceReviews && !isReviewsOrder) toast.error('Request timed out. Please try again.');
+      if (!isAuthEndpoint && !isBrandExperienceReviews && !isReviewsOrder && !isDashboardEndpoint) toast.error('Request timed out. Please try again.');
     } else if (error.request) {
-      if (!isAuthEndpoint && !isBrandExperienceReviews && !isReviewsOrder) toast.error('Network error. Please check your connection and try again.');
+      if (!isAuthEndpoint && !isBrandExperienceReviews && !isReviewsOrder && !isDashboardEndpoint) toast.error('Network error. Please check your connection and try again.');
     } else {
-      if (!isAuthEndpoint && !isBrandExperienceReviews && !isReviewsOrder) toast.error('An unexpected error occurred.');
+      if (!isAuthEndpoint && !isBrandExperienceReviews && !isReviewsOrder && !isDashboardEndpoint) toast.error('An unexpected error occurred.');
     }
     return Promise.reject(error);
   }
@@ -137,12 +138,17 @@ export const register = async (userData: any) => {
   }
 };
 
-export const login = async (email: string, password: string) => {
+export const login = async (identifier: string, password: string) => {
   try {
-    console.log('Attempting to login user:', email);
+    console.log('Attempting to login user:', identifier);
+    
+    // Determine if identifier is email or username
+    const isEmail = identifier.includes('@');
+    const loginData = isEmail ? { email: identifier, password } : { username: identifier, password };
+    
     // Try main login endpoint
     try {
-      const response = await API.post('/users/login', { email, password });
+      const response = await API.post('/users/login', loginData);
       if (response.data && response.data.token) {
         console.log('Login successful, storing token');
         localStorage.setItem('token', response.data.token);
@@ -176,7 +182,7 @@ export const login = async (email: string, password: string) => {
       console.log('Main login endpoint failed, trying alternative endpoint');
       // Try alternative endpoint (auth/login)
       try {
-        const altResponse = await API.post('/auth/login', { email, password });
+        const altResponse = await API.post('/auth/login', loginData);
         if (altResponse.data && altResponse.data.token) {
           console.log('Login successful via alternative endpoint');
           localStorage.setItem('token', altResponse.data.token);
@@ -207,7 +213,7 @@ export const login = async (email: string, password: string) => {
       }
       // Try another alternative endpoint (login)
       try {
-        const simpleResponse = await API.post('/login', { email, password });
+        const simpleResponse = await API.post('/login', loginData);
         if (simpleResponse.data && simpleResponse.data.token) {
           console.log('Login successful via simple endpoint');
           localStorage.setItem('token', simpleResponse.data.token);
@@ -241,15 +247,15 @@ export const login = async (email: string, password: string) => {
       // Only allow mock login for specific test users in development
       if (
         process.env.NODE_ENV === 'development' &&
-        ((email === 'test@example.com' && password === 'password') ||
-         (email === 'admin@example.com' && password === 'admin'))
+        ((identifier === 'test@example.com' && password === 'password') ||
+         (identifier === 'admin@example.com' && password === 'admin'))
       ) {
-        const isCreator = email === 'test@example.com';
-        const isAdmin = email === 'admin@example.com';
+        const isCreator = identifier === 'test@example.com';
+        const isAdmin = identifier === 'admin@example.com';
         const userRole = isCreator ? 'creator' : isAdmin ? 'brand' : 'user';
         const userData = {
-          email,
-          name: email.split('@')[0],
+          email: identifier,
+          name: identifier.split('@')[0],
           role: userRole,
           _id: 'user_' + Math.floor(Math.random() * 10000000)
         };
@@ -259,12 +265,12 @@ export const login = async (email: string, password: string) => {
         localStorage.setItem('userRole', userRole);
         if (userRole === 'creator') {
           localStorage.setItem('creator_profile_exists', 'true');
-          const username = email.split('@')[0].toLowerCase().replace(/[^a-z0-9_]/g, '_');
+          const username = identifier.split('@')[0].toLowerCase().replace(/[^a-z0-9_]/g, '_');
           localStorage.setItem('username', username);
         } else if (userRole === 'brand') {
           localStorage.setItem('is_brand', 'true');
           localStorage.setItem('account_type', 'brand');
-          localStorage.setItem('brandName', email.split('@')[0]);
+          localStorage.setItem('brandName', identifier.split('@')[0]);
         }
         return {
           success: true,
@@ -274,7 +280,7 @@ export const login = async (email: string, password: string) => {
         };
       }
       // For all other cases, do not store anything and throw error
-      throw new Error('Invalid credentials. Please check your email and password.');
+      throw new Error('Invalid credentials. Please check your email/username and password.');
     }
   } catch (error: any) {
     console.error('Login error:', error);
@@ -2022,6 +2028,21 @@ const generateMockCreators = () => {
  * @route   GET /api/creators
  * @access  Public
  */
+interface FilteredCreatorsParams {
+  search?: string;
+  category?: string;
+  platform?: string;
+  priceMin?: number;
+  priceMax?: number;
+  followersMin?: number;
+  followersMax?: number;
+  sortBy?: string;
+  page?: number;
+  limit?: number;
+  tags?: string[];
+  contentTypes?: string[];
+}
+
 export const getFilteredCreators = async ({
   search = '',
   category = 'All Categories',
@@ -2032,8 +2053,10 @@ export const getFilteredCreators = async ({
   followersMax = 1000000,
   sortBy = 'relevance',
   page = 1,
-  limit = 9
-}) => {
+  limit = 9,
+  tags = [],
+  contentTypes = []
+}: FilteredCreatorsParams = {}) => {
   try {
     console.log(`Fetching filtered creators with search: "${search}", category: ${category}, page: ${page}`);
     
@@ -2043,6 +2066,14 @@ export const getFilteredCreators = async ({
     if (search) queryParams.append('searchQuery', search);
     if (category && category !== 'All Categories') queryParams.append('category', category);
     if (platform && platform !== 'All Platforms') queryParams.append('platform', platform);
+    
+    // Add tags and content types to query params
+    if (tags && tags.length > 0) {
+      tags.forEach(tag => queryParams.append('tags', tag));
+    }
+    if (contentTypes && contentTypes.length > 0) {
+      contentTypes.forEach(contentType => queryParams.append('contentTypes', contentType));
+    }
     
     queryParams.append('priceMin', String(priceMin));
     queryParams.append('priceMax', String(priceMax));
@@ -2101,7 +2132,9 @@ export const getFilteredCreators = async ({
           followersMax,
           sortBy,
           page,
-          limit
+          limit,
+          tags,
+          contentTypes
         }),
         pagination: {
           total: 50, // Mock total count
@@ -2169,8 +2202,29 @@ const mapCreatorToClientFormat = (creator: any) => {
     category: creator.professionalInfo?.category
   });
   
-  const categories = creator.professionalInfo?.categories || 
-                    (creator.professionalInfo?.category ? [creator.professionalInfo.category] : ['General']);
+  // Get categories from either the categories array or the single category
+  let categories = [];
+  
+  if (creator.professionalInfo?.categories) {
+    if (Array.isArray(creator.professionalInfo.categories)) {
+      categories = creator.professionalInfo.categories;
+    } else if (typeof creator.professionalInfo.categories === 'string') {
+      // If it's a comma-separated string, split it into an array
+      if (creator.professionalInfo.categories.includes(',')) {
+        categories = creator.professionalInfo.categories.split(',').map((cat: string) => cat.trim());
+      } else {
+        categories = [creator.professionalInfo.categories];
+      }
+    }
+  } else if (creator.professionalInfo?.category) {
+    // If no categories array but has a single category
+    categories = [creator.professionalInfo.category];
+  }
+  
+  // Ensure categories is always an array
+  if (!Array.isArray(categories)) {
+    categories = [];
+  }
   
   console.log('🎯 mapCreatorToClientFormat Debug - Extracted categories:', categories);
   
@@ -2180,7 +2234,7 @@ const mapCreatorToClientFormat = (creator: any) => {
     name,
     username: username.startsWith('@') ? username : `@${username}`,
     avatar,
-    category: creator.professionalInfo?.category || 'General',
+    category: creator.professionalInfo?.category || '',
     categories, // Add categories array
     subCategory: creator.professionalInfo?.subcategory || '',
     location,  // Now properly formatted as a string
@@ -2193,28 +2247,40 @@ const mapCreatorToClientFormat = (creator: any) => {
       premium: creator.pricing?.enterprise?.price || 
                (creator.pricing?.premium ? creator.pricing.premium : 30000)
     },
-    rating: typeof creator.rating === 'number' ? creator.rating : 
-            (creator.metrics?.ratings?.average || 4.5),
+    rating: typeof creator.rating === 'number' ? creator.rating
+      : (typeof creator.metrics?.ratings?.average === 'number' ? creator.metrics.ratings.average
+      : (typeof creator.metrics?.rating === 'number' ? creator.metrics.rating : 0)),
+    reviewCount: typeof creator.reviews === 'number' ? creator.reviews
+      : (typeof creator.reviewCount === 'number' ? creator.reviewCount
+      : (typeof creator.metrics?.ratings?.count === 'number' ? creator.metrics.ratings.count
+      : (typeof creator.metrics?.reviewCount === 'number' ? creator.metrics.reviewCount : 0))),
     followers: {
       total: creator.socialMedia?.totalReach || 100000,
       instagram: creator.socialMedia?.socialProfiles?.instagram?.followers || 0,
       youtube: creator.socialMedia?.socialProfiles?.youtube?.subscribers || 0,
       twitter: creator.socialMedia?.socialProfiles?.twitter?.followers || 0
     },
-    engagement: creator.professionalInfo?.engagementRate || '4.2%',
     tags: creator.professionalInfo?.expertise || 
           creator.professionalInfo?.skills?.map((s: any) => s.skill || s) || 
           ['Content Creation'],
     isVerified: creator.status === 'published' || true,
     platforms: creator.socialMedia?.socialProfiles ? 
       Object.keys(creator.socialMedia.socialProfiles)
-        .filter(key => creator.socialMedia.socialProfiles[key]?.url || 
+        .filter((key: string) => creator.socialMedia.socialProfiles[key]?.url || 
                 creator.socialMedia.socialProfiles[key]?.handle)
-        .map(key => key.charAt(0).toUpperCase() + key.slice(1)) : 
+        .map((key: string) => key.charAt(0).toUpperCase() + key.slice(1)) : 
       ['Instagram'],
     completedProjects: creator.metrics?.projectsCompleted || 
                         Math.floor(Math.random() * 20) + 5,
     title, // Add title to the returned object
+    socialMedia: {
+      instagram: creator.socialMedia?.socialProfiles?.instagram?.url || creator.socialMedia?.socialProfiles?.instagram || '',
+      twitter: creator.socialMedia?.socialProfiles?.twitter?.url || creator.socialMedia?.socialProfiles?.twitter || '',
+      linkedin: creator.socialMedia?.socialProfiles?.linkedin?.url || creator.socialMedia?.socialProfiles?.linkedin || '',
+      youtube: creator.socialMedia?.socialProfiles?.youtube?.url || creator.socialMedia?.socialProfiles?.youtube || '',
+      facebook: creator.socialMedia?.socialProfiles?.facebook?.url || creator.socialMedia?.socialProfiles?.facebook || '',
+      // tiktok: creator.socialMedia?.socialProfiles?.tiktok?.url || creator.socialMedia?.socialProfiles?.tiktok || '',
+    },
   };
 };
 
@@ -2231,7 +2297,9 @@ const generateMockFilteredCreators = ({
   followersMax = 1000000,
   sortBy = 'relevance',
   page = 1,
-  limit = 9
+  limit = 9,
+  tags = [],
+  contentTypes = []
 }: {
   search?: string;
   category?: string;
@@ -2243,6 +2311,8 @@ const generateMockFilteredCreators = ({
   sortBy?: string;
   page?: number;
   limit?: number;
+  tags?: string[];
+  contentTypes?: string[];
 }) => {
   // Generate a consistent set of mock creators
   const allMockCreators = Array(50).fill(null).map((_, index) => {
@@ -2282,7 +2352,6 @@ const generateMockFilteredCreators = ({
         instagram: 30000 + (id * 5000),
         youtube: 20000 + (id * 3000)
       },
-      engagement: `${3 + (id % 5)}.${id % 10}%`,
       tags: ['Creative', selectedCategory.split(' ')[0], 'Influencer', 'Professional'],
       isVerified: id % 3 === 0,
       platforms: creatorPlatforms,
@@ -2338,11 +2407,6 @@ const generateMockFilteredCreators = ({
     filteredMockCreators.sort((a, b) => b.rating - a.rating);
   } else if (sortBy === 'followers') {
     filteredMockCreators.sort((a, b) => b.followers.total - a.followers.total);
-  } else if (sortBy === 'engagement') {
-    filteredMockCreators.sort((a, b) => 
-      parseFloat(b.engagement.replace('%', '')) - 
-      parseFloat(a.engagement.replace('%', ''))
-    );
   }
   
   // Apply pagination
@@ -4975,5 +5039,257 @@ export const getBrandQuoteRequestsByUsername = async (username: string) => {
   } catch (error) {
     console.error('Error fetching brand quote requests by username:', error);
     throw error;
+  }
+};
+
+// Get available tags for filtering
+export const getAvailableTags = async () => {
+  try {
+    const response = await fetch(`${API_BASE_URL}/creators/tags`);
+    if (!response.ok) {
+      throw new Error('Failed to fetch available tags');
+    }
+    const data = await response.json();
+    return data.data || [];
+  } catch (error) {
+    console.error('Error fetching available tags:', error);
+    // Return mock data for development
+    return [
+      { tag: 'Fashion', count: 45 },
+      { tag: 'Lifestyle', count: 38 },
+      { tag: 'Beauty', count: 32 },
+      { tag: 'Fitness', count: 28 },
+      { tag: 'Travel', count: 25 },
+      { tag: 'Food', count: 22 },
+      { tag: 'Technology', count: 20 },
+      { tag: 'Gaming', count: 18 },
+      { tag: 'Education', count: 15 },
+      { tag: 'Business', count: 12 }
+    ];
+  }
+};
+
+// Get available content types for filtering
+export const getAvailableContentTypes = async () => {
+  try {
+    const response = await fetch(`${API_BASE_URL}/creators/content-types`);
+    if (!response.ok) {
+      throw new Error('Failed to fetch available content types');
+    }
+    const data = await response.json();
+    return data.data || [];
+  } catch (error) {
+    console.error('Error fetching available content types:', error);
+    // Return mock data for development
+    return [
+      { contentType: 'Instagram Posts', count: 85 },
+      { contentType: 'Instagram Reels', count: 72 },
+      { contentType: 'YouTube Videos', count: 45 },
+      { contentType: 'TikTok Videos', count: 38 },
+      { contentType: 'Blog Posts', count: 25 },
+      { contentType: 'Product Reviews', count: 22 },
+      { contentType: 'Live Streams', count: 18 },
+      { contentType: 'Podcasts', count: 12 },
+      { contentType: 'Newsletters', count: 8 },
+      { contentType: 'Webinars', count: 5 }
+    ];
+  }
+};
+
+// Search History API Functions
+export const saveSearchHistory = async (searchData: {
+  query: string;
+  searchType: 'text' | 'category' | 'tag' | 'contentType';
+  filters?: any;
+  resultsCount?: number;
+}) => {
+  try {
+    const token = localStorage.getItem('token');
+    if (!token) {
+      throw new Error('No authentication token found');
+    }
+
+    const response = await fetch(`${API_BASE_URL}/search-history`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${token}`
+      },
+      body: JSON.stringify(searchData)
+    });
+
+    if (!response.ok) {
+      throw new Error('Failed to save search history');
+    }
+
+    const data = await response.json();
+    return data.data;
+  } catch (error) {
+    console.error('Error saving search history:', error);
+    // Don't throw error to avoid breaking the main search functionality
+    return null;
+  }
+};
+
+export const getSearchHistory = async (params?: {
+  limit?: number;
+  page?: number;
+  searchType?: string;
+}) => {
+  try {
+    const token = localStorage.getItem('token');
+    if (!token) {
+      throw new Error('No authentication token found');
+    }
+
+    const queryParams = new URLSearchParams();
+    if (params?.limit) queryParams.append('limit', params.limit.toString());
+    if (params?.page) queryParams.append('page', params.page.toString());
+    if (params?.searchType) queryParams.append('searchType', params.searchType);
+
+    const response = await fetch(`${API_BASE_URL}/search-history?${queryParams.toString()}`, {
+      headers: {
+        'Authorization': `Bearer ${token}`
+      }
+    });
+
+    if (!response.ok) {
+      throw new Error('Failed to fetch search history');
+    }
+
+    const data = await response.json();
+    return data.data;
+  } catch (error) {
+    console.error('Error fetching search history:', error);
+    return [];
+  }
+};
+
+export const getRecentSearches = async (limit: number = 10) => {
+  try {
+    const token = localStorage.getItem('token');
+    if (!token) {
+      throw new Error('No authentication token found');
+    }
+
+    const response = await fetch(`${API_BASE_URL}/search-history/recent?limit=${limit}`, {
+      headers: {
+        'Authorization': `Bearer ${token}`
+      }
+    });
+
+    if (!response.ok) {
+      throw new Error('Failed to fetch recent searches');
+    }
+
+    const data = await response.json();
+    return data.data;
+  } catch (error) {
+    console.error('Error fetching recent searches:', error);
+    return [];
+  }
+};
+
+export const getSearchAnalytics = async (days: number = 30) => {
+  try {
+    const token = localStorage.getItem('token');
+    if (!token) {
+      throw new Error('No authentication token found');
+    }
+
+    const response = await fetch(`${API_BASE_URL}/search-history/analytics?days=${days}`, {
+      headers: {
+        'Authorization': `Bearer ${token}`
+      }
+    });
+
+    if (!response.ok) {
+      throw new Error('Failed to fetch search analytics');
+    }
+
+    const data = await response.json();
+    return data.data;
+  } catch (error) {
+    console.error('Error fetching search analytics:', error);
+    return null;
+  }
+};
+
+export const updateSearchClick = async (searchId: string, creatorId: string) => {
+  try {
+    const token = localStorage.getItem('token');
+    if (!token) {
+      throw new Error('No authentication token found');
+    }
+
+    const response = await fetch(`${API_BASE_URL}/search-history/${searchId}/click`, {
+      method: 'PUT',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${token}`
+      },
+      body: JSON.stringify({ creatorId })
+    });
+
+    if (!response.ok) {
+      throw new Error('Failed to update search click');
+    }
+
+    const data = await response.json();
+    return data.data;
+  } catch (error) {
+    console.error('Error updating search click:', error);
+    return null;
+  }
+};
+
+export const clearSearchHistory = async () => {
+  try {
+    const token = localStorage.getItem('token');
+    if (!token) {
+      throw new Error('No authentication token found');
+    }
+
+    const response = await fetch(`${API_BASE_URL}/search-history`, {
+      method: 'DELETE',
+      headers: {
+        'Authorization': `Bearer ${token}`
+      }
+    });
+
+    if (!response.ok) {
+      throw new Error('Failed to clear search history');
+    }
+
+    const data = await response.json();
+    return data;
+  } catch (error) {
+    console.error('Error clearing search history:', error);
+    throw error;
+  }
+};
+
+export const getSearchRecommendations = async (limit: number = 5) => {
+  try {
+    const token = localStorage.getItem('token');
+    if (!token) {
+      throw new Error('No authentication token found');
+    }
+
+    const response = await fetch(`${API_BASE_URL}/search-history/recommendations?limit=${limit}`, {
+      headers: {
+        'Authorization': `Bearer ${token}`
+      }
+    });
+
+    if (!response.ok) {
+      throw new Error('Failed to fetch search recommendations');
+    }
+
+    const data = await response.json();
+    return data.data;
+  } catch (error) {
+    console.error('Error fetching search recommendations:', error);
+    return [];
   }
 };

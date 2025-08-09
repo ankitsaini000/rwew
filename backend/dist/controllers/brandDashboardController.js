@@ -198,13 +198,20 @@ exports.getDashboardRecommendations = (0, express_async_handler_1.default)(async
     var _a, _b;
     const recentlyViewed = ((_a = req.body) === null || _a === void 0 ? void 0 : _a.recentlyViewed) || ((_b = req.query) === null || _b === void 0 ? void 0 : _b.recentlyViewed) || [];
     let profiles = [];
-    if (Array.isArray(recentlyViewed) && recentlyViewed.length > 0) {
-        const unorderedProfiles = await CreatorProfile_1.CreatorProfile.find({ _id: { $in: recentlyViewed } });
-        // Sort profiles to match the order of recentlyViewed IDs
-        const idMap = new Map(unorderedProfiles.map(p => [String(p._id), p]));
-        profiles = recentlyViewed.map((id) => idMap.get(String(id))).filter(Boolean);
+    try {
+        if (Array.isArray(recentlyViewed) && recentlyViewed.length > 0) {
+            const unorderedProfiles = await CreatorProfile_1.CreatorProfile.find({ _id: { $in: recentlyViewed } });
+            // Sort profiles to match the order of recentlyViewed IDs
+            const idMap = new Map(unorderedProfiles.map(p => [String(p._id), p]));
+            profiles = recentlyViewed.map((id) => idMap.get(String(id))).filter(Boolean);
+        }
+        res.status(200).json({ success: true, data: profiles });
     }
-    res.status(200).json({ success: true, data: profiles });
+    catch (error) {
+        console.error('Error in getDashboardRecommendations:', error);
+        // Return empty array instead of error
+        res.status(200).json({ success: true, data: [] });
+    }
 });
 exports.getProfilesYouMayLike = (0, express_async_handler_1.default)(async (req, res) => {
     res.status(200).json({ success: true, data: [] });
@@ -212,7 +219,7 @@ exports.getProfilesYouMayLike = (0, express_async_handler_1.default)(async (req,
 exports.getBestCreatorsForBrand = (0, express_async_handler_1.default)(async (req, res) => {
     const brandId = req.user._id;
     try {
-        // First, check if brand has preferences
+        // First, try to get preference-based recommendations
         const preference = await BrandPreference_1.default.findOne({ brandId });
         if (preference) {
             // Use preference-based recommendations
@@ -227,171 +234,122 @@ exports.getBestCreatorsForBrand = (0, express_async_handler_1.default)(async (re
                 ]
             };
             const creators = await CreatorProfile_1.CreatorProfile.find(query)
-                .populate('user', 'name email avatar')
                 .sort({ 'metrics.ratings.average': -1, 'metrics.projectsCompleted': -1 })
                 .limit(10);
-            res.status(200).json({
-                success: true,
-                data: creators,
-                source: 'preferences'
-            });
+            res.status(200).json({ success: true, data: creators });
             return;
         }
-        // No preferences - use BrandRecommendation system
-        let brandRecommendation = await BrandRecommendation_1.default.findOne({ brand_id: brandId });
-        if (brandRecommendation && brandRecommendation.recommended_creators.length > 0) {
-            // Use cached recommendations
-            const creators = await CreatorProfile_1.CreatorProfile.find({
-                _id: { $in: brandRecommendation.recommended_creators },
-                status: 'published',
-                'publishInfo.isPublished': true
-            }).populate('user', 'name email avatar');
-            res.status(200).json({
-                success: true,
-                data: creators,
-                source: 'cached_recommendations'
-            });
+        // No preferences found, use automatic recommendations
+        let recommendation = await BrandRecommendation_1.default.findOne({ brand_id: brandId });
+        if (!recommendation || !recommendation.recommended_creators || recommendation.recommended_creators.length === 0) {
+            // Generate new automatic recommendations
+            const creators = await generateAutomaticRecommendations(brandId.toString());
+            // Save the recommendations
+            if (recommendation) {
+                recommendation.recommended_creators = creators.map(c => c._id);
+                await recommendation.save();
+            }
+            else {
+                await BrandRecommendation_1.default.create({
+                    brand_id: brandId,
+                    recommended_creators: creators.map(c => c._id)
+                });
+            }
+            res.status(200).json({ success: true, data: creators });
             return;
         }
-        // Generate new smart default recommendations
-        const smartRecommendations = await generateSmartDefaultRecommendations(brandId);
-        if (smartRecommendations.length === 0) {
-            // Fallback to trending creators
-            const trendingCreators = await CreatorProfile_1.CreatorProfile.find({
-                status: 'published',
-                'publishInfo.isPublished': true,
-                'metrics.projectsCompleted': { $gte: 5 }
-            })
-                .populate('user', 'name email avatar')
-                .sort({ 'metrics.ratings.average': -1, 'metrics.followers': -1 })
-                .limit(10);
-            res.status(200).json({
-                success: true,
-                data: trendingCreators,
-                source: 'trending_fallback'
-            });
-            return;
-        }
-        // Cache the new recommendations
-        if (!brandRecommendation) {
-            brandRecommendation = new BrandRecommendation_1.default({
-                brand_id: brandId,
-                recommended_creators: smartRecommendations.map(c => c._id)
-            });
-        }
-        else {
-            brandRecommendation.recommended_creators = smartRecommendations.map(c => c._id);
-        }
-        await brandRecommendation.save();
-        res.status(200).json({
-            success: true,
-            data: smartRecommendations,
-            source: 'smart_algorithm'
+        // Return existing recommendations
+        const creators = await CreatorProfile_1.CreatorProfile.find({
+            _id: { $in: recommendation.recommended_creators },
+            status: 'published',
+            'publishInfo.isPublished': true
         });
+        res.status(200).json({ success: true, data: creators });
     }
     catch (error) {
         console.error('Error in getBestCreatorsForBrand:', error);
         res.status(500).json({
             success: false,
-            message: 'Error fetching best creators for brand'
+            error: 'Failed to fetch creator recommendations'
         });
     }
 });
-// Helper function to generate smart default recommendations
-async function generateSmartDefaultRecommendations(brandId) {
+// Helper function to generate automatic recommendations
+const generateAutomaticRecommendations = async (brandId) => {
     try {
-        // Get top-rated creators
-        const topRatedCreators = await CreatorProfile_1.CreatorProfile.find({
+        // Get brand profile for context
+        const brandUser = await User_1.default.findById(brandId);
+        // Base query for published creators
+        const baseQuery = {
             status: 'published',
-            'publishInfo.isPublished': true,
-            'metrics.ratings.average': { $gte: 4.0 },
-            'metrics.projectsCompleted': { $gte: 3 }
-        })
-            .populate('user', 'name email avatar')
-            .sort({ 'metrics.ratings.average': -1 })
-            .limit(15);
-        // Get trending creators (recent high engagement)
-        const trendingCreators = await CreatorProfile_1.CreatorProfile.find({
-            status: 'published',
-            'publishInfo.isPublished': true,
-            'metrics.projectsCompleted': { $gte: 5 },
-            'publishInfo.publishedAt': { $gte: new Date(Date.now() - 30 * 24 * 60 * 60 * 1000) }
-        })
-            .populate('user', 'name email avatar')
-            .sort({ 'metrics.projectsCompleted': -1, 'metrics.followers': -1 })
-            .limit(15);
-        // Get verified creators
-        const verifiedCreators = await CreatorProfile_1.CreatorProfile.find({
-            status: 'published',
-            'publishInfo.isPublished': true,
-            'verification.isVerified': true
-        })
-            .populate('user', 'name email avatar')
-            .sort({ 'metrics.ratings.average': -1 })
-            .limit(10);
-        // Get creators from popular categories
-        const popularCategories = ['Fashion', 'Beauty', 'Lifestyle', 'Food', 'Travel', 'Tech'];
-        const categoryCreators = await CreatorProfile_1.CreatorProfile.find({
-            status: 'published',
-            'publishInfo.isPublished': true,
-            'professionalInfo.categories': { $in: popularCategories }
-        })
-            .populate('user', 'name email avatar')
-            .sort({ 'metrics.ratings.average': -1 })
-            .limit(20);
-        // Combine and deduplicate
-        const allCreators = [...topRatedCreators, ...trendingCreators, ...verifiedCreators, ...categoryCreators];
-        const uniqueCreators = Array.from(new Map(allCreators.map(c => [c._id.toString(), c])).values());
+            'publishInfo.isPublished': true
+        };
+        let creators = [];
+        // Strategy 1: Get top-rated creators
+        const topRatedCreators = await CreatorProfile_1.CreatorProfile.find(baseQuery)
+            .sort({ 'metrics.ratings.average': -1, 'metrics.projectsCompleted': -1 })
+            .limit(4);
+        creators = [...creators, ...topRatedCreators];
+        // Strategy 2: Get creators from popular categories
+        const popularCategories = ['Fashion', 'Lifestyle', 'Technology', 'Beauty', 'Fitness'];
+        const categoryCreators = await CreatorProfile_1.CreatorProfile.find(Object.assign(Object.assign({}, baseQuery), { 'professionalInfo.categories': { $in: popularCategories } }))
+            .sort({ 'metrics.followers': -1 })
+            .limit(3);
+        creators = [...creators, ...categoryCreators];
+        // Strategy 3: Get creators with recent activity
+        const recentCreators = await CreatorProfile_1.CreatorProfile.find(baseQuery)
+            .sort({ 'lastActive': -1 })
+            .limit(3);
+        creators = [...creators, ...recentCreators];
+        // Remove duplicates and apply diversity
+        const uniqueCreators = creators.filter((creator, index, self) => index === self.findIndex(c => c._id.toString() === creator._id.toString()));
         // Apply diversity algorithm
-        return applyDiversityToRecommendations(uniqueCreators, 10);
+        const diverseCreators = applyDiversityAlgorithm(uniqueCreators);
+        return diverseCreators.slice(0, 10);
     }
     catch (error) {
-        console.error('Error generating smart recommendations:', error);
-        return [];
+        console.error('Error generating automatic recommendations:', error);
+        // Fallback: return any published creators
+        return await CreatorProfile_1.CreatorProfile.find({
+            status: 'published',
+            'publishInfo.isPublished': true
+        })
+            .sort({ 'metrics.ratings.average': -1 })
+            .limit(6);
     }
-}
-// Helper function to apply diversity to recommendations
-function applyDiversityToRecommendations(creators, limit) {
+};
+// Helper function to apply diversity algorithm
+const applyDiversityAlgorithm = (creators) => {
     var _a, _b, _c, _d;
-    const selected = [];
+    const diverseCreators = [];
     const usedCategories = new Set();
-    const usedPriceRanges = new Set();
     const usedPlatforms = new Set();
-    // Sort by overall quality score
-    const sortedCreators = creators.sort((a, b) => {
-        var _a, _b, _c, _d, _e, _f, _g, _h;
-        const scoreA = (((_b = (_a = a.metrics) === null || _a === void 0 ? void 0 : _a.ratings) === null || _b === void 0 ? void 0 : _b.average) || 0) * 0.4 +
-            (((_c = a.metrics) === null || _c === void 0 ? void 0 : _c.projectsCompleted) || 0) * 0.3 +
-            (((_d = a.metrics) === null || _d === void 0 ? void 0 : _d.followers) || 0) * 0.0001;
-        const scoreB = (((_f = (_e = b.metrics) === null || _e === void 0 ? void 0 : _e.ratings) === null || _f === void 0 ? void 0 : _f.average) || 0) * 0.4 +
-            (((_g = b.metrics) === null || _g === void 0 ? void 0 : _g.projectsCompleted) || 0) * 0.3 +
-            (((_h = b.metrics) === null || _h === void 0 ? void 0 : _h.followers) || 0) * 0.0001;
-        return scoreB - scoreA;
-    });
-    // Select diverse creators
-    for (const creator of sortedCreators) {
-        if (selected.length >= limit)
-            break;
-        const category = ((_b = (_a = creator.professionalInfo) === null || _a === void 0 ? void 0 : _a.categories) === null || _b === void 0 ? void 0 : _b[0]) || 'Other';
-        const priceRange = ((_c = creator.pricing) === null || _c === void 0 ? void 0 : _c.minPrice) ?
-            (creator.pricing.minPrice < 100 ? 'low' :
-                creator.pricing.minPrice < 500 ? 'medium' : 'high') : 'unknown';
-        const platform = ((_d = creator.socialMedia) === null || _d === void 0 ? void 0 : _d.primaryPlatform) || 'unknown';
-        // Allow some overlap but prioritize diversity
-        const categoryDiversity = !usedCategories.has(category) || selected.length < 3;
-        const priceDiversity = !usedPriceRanges.has(priceRange) || selected.length < 4;
-        const platformDiversity = !usedPlatforms.has(platform) || selected.length < 5;
-        if (categoryDiversity || priceDiversity || platformDiversity) {
-            selected.push(creator);
+    // First pass: ensure category diversity
+    for (const creator of creators) {
+        const category = (_b = (_a = creator.professionalInfo) === null || _a === void 0 ? void 0 : _a.categories) === null || _b === void 0 ? void 0 : _b[0];
+        const platform = (_c = creator.socialMedia) === null || _c === void 0 ? void 0 : _c.primaryPlatform;
+        if (category && !usedCategories.has(category)) {
+            diverseCreators.push(creator);
             usedCategories.add(category);
-            usedPriceRanges.add(priceRange);
+            if (platform)
+                usedPlatforms.add(platform);
+        }
+    }
+    // Second pass: ensure platform diversity
+    for (const creator of creators) {
+        if (diverseCreators.includes(creator))
+            continue;
+        const platform = (_d = creator.socialMedia) === null || _d === void 0 ? void 0 : _d.primaryPlatform;
+        if (platform && !usedPlatforms.has(platform)) {
+            diverseCreators.push(creator);
             usedPlatforms.add(platform);
         }
     }
-    // Fill remaining slots if needed
-    if (selected.length < limit) {
-        const remaining = sortedCreators.filter(c => !selected.includes(c));
-        selected.push(...remaining.slice(0, limit - selected.length));
+    // Third pass: fill remaining slots with highest-rated creators
+    for (const creator of creators) {
+        if (diverseCreators.includes(creator))
+            continue;
+        diverseCreators.push(creator);
     }
-    return selected.slice(0, limit);
-}
+    return diverseCreators;
+};

@@ -6,24 +6,28 @@ import AuthInput from "../../components/AuthInput";
 import AuthButton from "../../components/AuthButton";
 
 export default function LoginPage() {
-  const [email, setEmail] = useState("");
+  const [identifier, setIdentifier] = useState("");
   const [password, setPassword] = useState("");
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!email || !password) {
-      setError("Please enter both email and password.");
+    if (!identifier || !password) {
+      setError("Please enter both email/username and password.");
       return;
     }
     setError("");
     setLoading(true);
     try {
+      // Determine if identifier is email or username
+      const isEmail = identifier.includes('@');
+      const loginData = isEmail ? { email: identifier, password } : { username: identifier, password };
+      
       const res = await fetch("http://localhost:5001/api/users/login", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ email, password })
+        body: JSON.stringify(loginData)
       });
       const data = await res.json();
       if (!res.ok) {
@@ -46,10 +50,10 @@ export default function LoginPage() {
         <h2 style={{ marginBottom: 24, fontWeight: 600, fontSize: 28, textAlign: 'center', letterSpacing: -1 }}>Sign in to Admin</h2>
         <form onSubmit={handleSubmit} style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
           <AuthInput
-            label="Email"
-            type="email"
-            value={email}
-            onChange={e => setEmail(e.target.value)}
+            label="Email or Username"
+            type="text"
+            value={identifier}
+            onChange={e => setIdentifier(e.target.value)}
             autoFocus
           />
           <AuthInput

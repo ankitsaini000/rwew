@@ -21,7 +21,7 @@ export interface AuthContextType {
   isAuthenticated: boolean;
   loading: boolean;
   error: string | null;
-  login: (email: string, password: string) => Promise<void>;
+  login: (identifier: string, password: string) => Promise<void>;
   logout: () => void;
   signup: (userData: {
     email: string;
@@ -120,7 +120,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
     }
   };
 
-  const login = async (email: string, password: string) => {
+  const login = async (identifier: string, password: string) => {
     try {
       setLoading(true);
       setError(null);
@@ -133,7 +133,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
       
       // Use the API service instead of direct fetch
       const { login } = await import('@/services/api');
-      const data = await login(email, password);
+      const data = await login(identifier, password);
       
       // If we got here, login was successful
       setToken(data.token);

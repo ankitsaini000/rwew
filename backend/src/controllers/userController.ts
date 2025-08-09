@@ -130,17 +130,23 @@ export const registerUser = asyncHandler(async (req: Request, res: Response) => 
 export const loginUser = asyncHandler(async (req: Request, res: Response) => {
   console.log('Login request headers:', req.headers);
   console.log('Login request received with body:', req.body);
-  const { email, password } = req.body;
+  const { email, username, password } = req.body;
 
-  if (!email || !password) {
-    console.log('Missing required fields:', { email: !!email, password: !!password });
+  if ((!email && !username) || !password) {
+    console.log('Missing required fields:', { email: !!email, username: !!username, password: !!password });
     res.status(400);
-    throw new Error('Please provide email and password');
+    throw new Error('Please provide either email or username, and password');
   }
 
-  // Find user by email
-  const user = await User.findOne({ email });
-  console.log('User found:', user ? { userId: user._id, email: user.email } : 'No user found');
+  // Find user by email or username
+  let user;
+  if (email) {
+    user = await User.findOne({ email });
+    console.log('User found by email:', user ? { userId: user._id, email: user.email } : 'No user found');
+  } else if (username) {
+    user = await User.findOne({ username });
+    console.log('User found by username:', user ? { userId: user._id, username: user.username } : 'No user found');
+  }
 
   // Check if user exists and password matches
   if (user && (await user.isValidPassword(password))) {
@@ -180,9 +186,10 @@ export const loginUser = asyncHandler(async (req: Request, res: Response) => {
       token,
     });
   } else {
-    console.log('Invalid email or password for:', email);
+    const identifier = email || username;
+    console.log('Invalid credentials for:', identifier);
     res.status(401);
-    throw new Error('Invalid email or password');
+    throw new Error('Invalid email/username or password');
   }
 });
 

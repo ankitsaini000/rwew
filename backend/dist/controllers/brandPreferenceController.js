@@ -37,11 +37,13 @@ const getBrandPreference = async (req, res) => {
         const { brandId } = req.params;
         const preference = await BrandPreference_1.default.findOne({ brandId });
         if (!preference) {
-            return res.status(404).json({ message: 'Preference not found' });
+            // Return 404 so frontend can catch this and show popup
+            return res.status(404).json({ message: 'No preferences found' });
         }
         res.json(preference);
     }
     catch (error) {
+        // Return 500 error so frontend can catch this and show popup
         res.status(500).json({ message: 'Error fetching brand preference', error });
     }
 };

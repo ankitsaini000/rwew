@@ -49,6 +49,7 @@ const targetAudienceGenderRoutes_1 = __importDefault(require("./routes/targetAud
 const targetAudienceAgeRangeRoutes_1 = __importDefault(require("./routes/targetAudienceAgeRangeRoutes"));
 const socialMediaPreferenceRoutes_1 = __importDefault(require("./routes/socialMediaPreferenceRoutes"));
 const creatorBankAccountRoutes_1 = __importDefault(require("./routes/creatorBankAccountRoutes"));
+const searchHistoryRoutes_1 = __importDefault(require("./routes/searchHistoryRoutes"));
 // Load environment variables
 dotenv_1.default.config();
 // Connect to MongoDB
@@ -157,6 +158,7 @@ app.use('/api/target-audience-genders', targetAudienceGenderRoutes_1.default);
 app.use('/api/target-audience-age-ranges', targetAudienceAgeRangeRoutes_1.default);
 app.use('/api/social-media-preferences', socialMediaPreferenceRoutes_1.default);
 app.use('/api/creator-bank-accounts', creatorBankAccountRoutes_1.default);
+app.use('/api/search-history', searchHistoryRoutes_1.default);
 // Add debug logging for the route path
 console.log('Mounting creator-dashboard routes at: /api/creator-dashboard');
 app.use('/api/creator-dashboard', creatorDashboardRoutes_1.default);

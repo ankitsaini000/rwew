@@ -128,15 +128,22 @@ exports.registerUser = (0, express_async_handler_1.default)(async (req, res) => 
 exports.loginUser = (0, express_async_handler_1.default)(async (req, res) => {
     console.log('Login request headers:', req.headers);
     console.log('Login request received with body:', req.body);
-    const { email, password } = req.body;
-    if (!email || !password) {
-        console.log('Missing required fields:', { email: !!email, password: !!password });
+    const { email, username, password } = req.body;
+    if ((!email && !username) || !password) {
+        console.log('Missing required fields:', { email: !!email, username: !!username, password: !!password });
         res.status(400);
-        throw new Error('Please provide email and password');
+        throw new Error('Please provide either email or username, and password');
     }
-    // Find user by email
-    const user = await User_1.default.findOne({ email });
-    console.log('User found:', user ? { userId: user._id, email: user.email } : 'No user found');
+    // Find user by email or username
+    let user;
+    if (email) {
+        user = await User_1.default.findOne({ email });
+        console.log('User found by email:', user ? { userId: user._id, email: user.email } : 'No user found');
+    }
+    else if (username) {
+        user = await User_1.default.findOne({ username });
+        console.log('User found by username:', user ? { userId: user._id, username: user.username } : 'No user found');
+    }
     // Check if user exists and password matches
     if (user && (await user.isValidPassword(password))) {
         if (user.isActive === false) {
@@ -177,9 +184,10 @@ exports.loginUser = (0, express_async_handler_1.default)(async (req, res) => {
         });
     }
     else {
-        console.log('Invalid email or password for:', email);
+        const identifier = email || username;
+        console.log('Invalid credentials for:', identifier);
         res.status(401);
-        throw new Error('Invalid email or password');
+        throw new Error('Invalid email/username or password');
     }
 });
 // @desc    Get user profile

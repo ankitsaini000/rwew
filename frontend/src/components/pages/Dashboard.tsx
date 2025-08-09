@@ -9,9 +9,10 @@ import "swiper/css/navigation";
 import "swiper/css/grid";
 import { DashboardLayout } from "../layout/DashboardLayout";
 import { useRouter } from "next/navigation";
+import Link from "next/link";
 import { useCreatorStore } from "@/store/creatorStore";
 import PublishedCreators from '../creator/PublishedCreators';
-import { getCategories, getPublishedCreators, getFilteredCreators } from "@/services/api";
+import { getCategories, getPublishedCreators, getFilteredCreators, getAvailableTags, getAvailableContentTypes, saveSearchHistory, getRecentSearches, clearSearchHistory } from "@/services/api";
 import { useAuth } from '@/context/AuthContext';
 import { BrandSignupPopup } from '../modals/BrandSignupPopup';
 import { createBrandPreference, getBrandPreference } from '../../services/brandPreference';
@@ -131,62 +132,151 @@ export function Dashboard() {
   // Best Creators State
   const [bestCreators, setBestCreators] = useState<any[]>([]);
   const [bestCreatorsLoading, setBestCreatorsLoading] = useState(false);
+  
+  // Tags and Content Types State
+  const [availableTags, setAvailableTags] = useState<Array<{tag: string, count: number}>>([]);
+  const [availableContentTypes, setAvailableContentTypes] = useState<Array<{contentType: string, count: number}>>([]);
+  const [tagBasedRecommendations, setTagBasedRecommendations] = useState<any[]>([]);
+  const [contentTypeBasedRecommendations, setContentTypeBasedRecommendations] = useState<any[]>([]);
+  
+  // Search-based recommendations state
+  const [searchBasedRecommendations, setSearchBasedRecommendations] = useState<any[]>([]);
+  const [searchHistory, setSearchHistory] = useState<string[]>([]);
+  const [recentSearches, setRecentSearches] = useState<Array<{query: string, timestamp: number}>>([]);
+  const [searchHistoryLoading, setSearchHistoryLoading] = useState(false);
+
+  // Function to fetch top creators from backend
+  const fetchTopCreators = async () => {
+    setTopCreatorsLoading(true);
+    setTopCreatorsError(null);
+    try {
+      const creators = await getPublishedCreators();
+      console.log('🎯 Dashboard Debug - Received creators from getPublishedCreators:', creators);
+      
+      // Filter only published profiles
+      const publishedCreators = creators.filter((creator: any) => 
+        creator.status === 'published' && 
+        creator.publishInfo?.isPublished === true &&
+        creator.isActive !== false
+      );
+      
+      publishedCreators.forEach((creator: any, index: number) => {
+        console.log(`🎯 Dashboard Debug - Published Creator ${index + 1}:`, {
+          name: creator.userId?.fullName || creator.personalInfo?.username,
+          categories: creator.professionalInfo?.categories,
+          category: creator.professionalInfo?.category,
+          status: creator.status,
+          isPublished: creator.publishInfo?.isPublished
+        });
+      });
+      
+      // Shuffle the published creators array to get different creators each time
+      const shuffledCreators = shuffleArray([...publishedCreators]);
+      setTopCreatorsList(shuffledCreators.slice(0, 3));
+    } catch (err) {
+      setTopCreatorsError("Failed to load top creators");
+    } finally {
+      setTopCreatorsLoading(false);
+    }
+  };
+
+  // Function to fetch categories from backend
+  const fetchCategories = async () => {
+    setCategoriesLoading(true);
+    setCategoriesError(null);
+    try {
+      const cats = await getCategories();
+      // Normalize and deduplicate
+      const normalizedMap = new Map();
+      cats.forEach((cat: any) => {
+        const normName = normalizeCategoryName(cat.name);
+        if (!normalizedMap.has(normName)) {
+          normalizedMap.set(normName, { ...cat, name: normName });
+        }
+      });
+      setCategories(Array.from(normalizedMap.values()));
+    } catch (err) {
+      setCategoriesError("Failed to load categories");
+    } finally {
+      setCategoriesLoading(false);
+    }
+  };
 
   useEffect(() => {
     document.title = "Home | Creator Platform";
-    // Fetch categories from backend
-    const fetchCategories = async () => {
-      setCategoriesLoading(true);
-      setCategoriesError(null);
-      try {
-        const cats = await getCategories();
-        // Normalize and deduplicate
-        const normalizedMap = new Map();
-        cats.forEach((cat: any) => {
-          const normName = normalizeCategoryName(cat.name);
-          if (!normalizedMap.has(normName)) {
-            normalizedMap.set(normName, { ...cat, name: normName });
+    
+    // Load search history from backend
+    const loadSearchHistory = async () => {
+      if (isAuthenticated && user?.role === 'brand') {
+        setSearchHistoryLoading(true);
+        try {
+          const recentSearchesData = await getRecentSearches(10);
+          const formattedSearches = recentSearchesData.map((search: any) => ({
+            query: search.query,
+            timestamp: new Date(search.createdAt).getTime()
+          }));
+          setRecentSearches(formattedSearches);
+          setSearchHistory(formattedSearches.map((s: any) => s.query));
+        } catch (error) {
+          console.error('Error loading search history from backend:', error);
+          // Fallback to localStorage
+          try {
+            const savedSearches = localStorage.getItem('recentSearches');
+            const savedHistory = localStorage.getItem('searchHistory');
+            if (savedSearches) {
+              setRecentSearches(JSON.parse(savedSearches));
+            }
+            if (savedHistory) {
+              setSearchHistory(JSON.parse(savedHistory));
+            }
+          } catch (localError) {
+            console.error('Error loading search history from localStorage:', localError);
           }
-        });
-        setCategories(Array.from(normalizedMap.values()));
-      } catch (err) {
-        setCategoriesError("Failed to load categories");
-      } finally {
-        setCategoriesLoading(false);
+        } finally {
+          setSearchHistoryLoading(false);
+        }
       }
     };
+    
+    loadSearchHistory();
+    
+    // Fetch categories
     fetchCategories();
-    // Fetch top creators from backend
-    const fetchTopCreators = async () => {
-      setTopCreatorsLoading(true);
-      setTopCreatorsError(null);
-      try {
-        const creators = await getPublishedCreators();
-        console.log('🎯 Dashboard Debug - Received creators from getPublishedCreators:', creators);
-        creators.forEach((creator: any, index: number) => {
-          console.log(`🎯 Dashboard Debug - Creator ${index + 1}:`, {
-            name: creator.userId?.fullName || creator.personalInfo?.username,
-            categories: creator.professionalInfo?.categories,
-            category: creator.professionalInfo?.category
-          });
-        });
-        setTopCreatorsList(creators.slice(0, 3));
-      } catch (err) {
-        setTopCreatorsError("Failed to load top creators");
-      } finally {
-        setTopCreatorsLoading(false);
-      }
-    };
+    
+    // Fetch top creators
     fetchTopCreators();
+    
     // Fetch matches for brand user
     if (isAuthenticated && user?.role === 'brand' && user?._id) {
       setMatchesLoading(true);
       fetchBrandMatches(user._id)
         .then(setMatches)
-        .catch((err) => setMatchesError(err.message || 'Error fetching matches'))
+        .catch(() => {
+          // Set empty matches array instead of error
+          setMatches([]);
+          // Don't set error message
+        })
         .finally(() => setMatchesLoading(false));
     }
   }, [isAuthenticated, user]);
+  
+  // Add an effect to reload creators when the page is refreshed
+  useEffect(() => {
+    // Add event listener for page visibility change
+    const handleVisibilityChange = () => {
+      if (document.visibilityState === 'visible') {
+        // Reload creators when page becomes visible (including refresh)
+        fetchTopCreators();
+      }
+    };
+    
+    document.addEventListener('visibilitychange', handleVisibilityChange);
+    
+    // Clean up the event listener
+    return () => {
+      document.removeEventListener('visibilitychange', handleVisibilityChange);
+    };
+  }, []);
 
   useEffect(() => {
     if (isAuthenticated && user?.role === 'brand' && user?._id) {
@@ -222,23 +312,106 @@ export function Dashboard() {
       } catch (e) {
         recent = [];
       }
+      
+      // Generate recommendations based on search history
+      const generateHistoryBasedRecommendations = async () => {
+        if (searchHistory.length > 0) {
+          // Use the most recent search for recommendations
+          const latestSearch = searchHistory[0];
+          await generateSearchBasedRecommendations(latestSearch);
+        }
+      };
+      
       getDashboardRecommendations(recent)
-        .then(setRecommendations)
+        .then(creators => {
+          // Filter only published profiles
+          const publishedCreators = creators.filter((creator: any) => 
+            creator.status === 'published' && 
+            creator.publishInfo?.isPublished === true &&
+            creator.isActive !== false
+          );
+          setRecommendations(publishedCreators);
+        })
         .catch(() => setRecommendations([]))
         .finally(() => setRecommendationsLoading(false));
+
       setProfilesYouMayLikeLoading(true);
       getProfilesYouMayLike()
-        .then(setProfilesYouMayLike)
+        .then(creators => {
+          // Filter only published profiles
+          const publishedCreators = creators.filter((creator: any) => 
+            creator.status === 'published' && 
+            creator.publishInfo?.isPublished === true &&
+            creator.isActive !== false
+          );
+          setProfilesYouMayLike(publishedCreators);
+        })
         .catch(() => setProfilesYouMayLike([]))
         .finally(() => setProfilesYouMayLikeLoading(false));
+        
+      // Generate history-based recommendations
+      generateHistoryBasedRecommendations();
     }
-  }, [isAuthenticated, user]);
+  }, [isAuthenticated, user, searchHistory]);
 
   useEffect(() => {
     if (isAuthenticated && user?.role === 'brand') {
       setBestCreatorsLoading(true);
+      
+      // Fetch tags and content types for enhanced recommendations
+      Promise.all([
+        getAvailableTags(),
+        getAvailableContentTypes()
+      ]).then(([tags, contentTypes]) => {
+        setAvailableTags(tags);
+        setAvailableContentTypes(contentTypes);
+        
+        // Get tag-based recommendations (top 3 tags) - only published profiles
+        if (tags.length > 0) {
+          const topTags = tags.slice(0, 3).map((t: {tag: string, count: number}) => t.tag);
+          getFilteredCreators({ tags: topTags, limit: 6 })
+            .then(result => {
+              // Filter only published profiles
+              const publishedCreators = result.creators.filter((creator: any) => 
+                creator.status === 'published' && 
+                creator.publishInfo?.isPublished === true &&
+                creator.isActive !== false
+              );
+              setTagBasedRecommendations(publishedCreators);
+            })
+            .catch(() => setTagBasedRecommendations([]));
+        }
+        
+        // Get content type-based recommendations (top 3 content types) - only published profiles
+        if (contentTypes.length > 0) {
+          const topContentTypes = contentTypes.slice(0, 3).map((ct: {contentType: string, count: number}) => ct.contentType);
+          getFilteredCreators({ contentTypes: topContentTypes, limit: 6 })
+            .then(result => {
+              // Filter only published profiles
+              const publishedCreators = result.creators.filter((creator: any) => 
+                creator.status === 'published' && 
+                creator.publishInfo?.isPublished === true &&
+                creator.isActive !== false
+              );
+              setContentTypeBasedRecommendations(publishedCreators);
+            })
+            .catch(() => setContentTypeBasedRecommendations([]));
+        }
+      }).catch(() => {
+        setAvailableTags([]);
+        setAvailableContentTypes([]);
+      });
+      
       getBestCreatorsForBrand()
-        .then(setBestCreators)
+        .then(creators => {
+          // Filter only published profiles
+          const publishedCreators = creators.filter((creator: any) => 
+            creator.status === 'published' && 
+            creator.publishInfo?.isPublished === true &&
+            creator.isActive !== false
+          );
+          setBestCreators(publishedCreators);
+        })
         .catch(() => setBestCreators([]))
         .finally(() => setBestCreatorsLoading(false));
     }
@@ -252,7 +425,56 @@ export function Dashboard() {
     popupTimerRef.current = setTimeout(() => {
       setShowBrandPopup(true);
     }, POPUP_TIMEOUT);
-    window.location.reload();
+    
+    // Instead of reloading, show general creator recommendations
+    if (isAuthenticated && user?.role === 'brand') {
+      setBestCreatorsLoading(true);
+      
+      // Try to get brand-specific creators first, fallback to general recommendations
+      getBestCreatorsForBrand()
+        .then(creators => {
+          if (creators && creators.length > 0) {
+            // Filter only published profiles
+            const publishedCreators = creators.filter((creator: any) => 
+              creator.status === 'published' && 
+              creator.publishInfo?.isPublished === true &&
+              creator.isActive !== false
+            );
+            setBestCreators(publishedCreators);
+          } else {
+            // Fallback: Use general published creators as recommendations
+            return getPublishedCreators().then(generalCreators => {
+              // Filter only published profiles and shuffle
+              const publishedCreators = generalCreators.filter((creator: any) => 
+                creator.status === 'published' && 
+                creator.publishInfo?.isPublished === true &&
+                creator.isActive !== false
+              );
+              const shuffled = publishedCreators.sort(() => 0.5 - Math.random());
+              setBestCreators(shuffled.slice(0, 6));
+            });
+          }
+        })
+        .catch(() => {
+          // If brand-specific API fails, use general published creators
+          getPublishedCreators()
+            .then(generalCreators => {
+              // Filter only published profiles and shuffle
+              const publishedCreators = generalCreators.filter((creator: any) => 
+                creator.status === 'published' && 
+                creator.publishInfo?.isPublished === true &&
+                creator.isActive !== false
+              );
+              const shuffled = publishedCreators.sort(() => 0.5 - Math.random());
+              setBestCreators(shuffled.slice(0, 6));
+            })
+            .catch(() => setBestCreators([]))
+        })
+        .finally(() => setBestCreatorsLoading(false));
+    }
+    
+    // Remove the page reload
+    // window.location.reload();
   };
 
   const handleBrandPopupSubmit = async (data: any) => {
@@ -588,27 +810,103 @@ export function Dashboard() {
     localStorage.setItem("selectedCategory", category);
   };
 
-  const handleSearchCategorySelect = (category: string) => {
+  const handleSearchCategorySelect = async (category: string) => {
     setSelectedSearchCategory(category);
     setIsCategoryDropdownOpen(false);
     localStorage.setItem("selectedSearchCategory", category);
+    
+    // Save category selection to search history for recommendations
+    if (category !== "All Categories") {
+      await saveSearchToHistory(category, 'category', { category });
+      await generateSearchBasedRecommendations(category);
+    }
+  };
+
+  // Function to save search to history
+  const saveSearchToHistory = async (query: string, searchType: 'text' | 'category' | 'tag' | 'contentType' = 'text', filters?: any) => {
+    if (!query.trim()) return;
+    
+    try {
+      // Save to backend
+      await saveSearchHistory({
+        query: query.trim(),
+        searchType,
+        filters,
+        resultsCount: 0 // Will be updated after search results
+      });
+      
+      // Update local state
+      const newSearch = { query: query.trim(), timestamp: Date.now() };
+      const updatedSearches = [newSearch, ...recentSearches.filter(s => s.query !== query.trim())].slice(0, 10);
+      setRecentSearches(updatedSearches);
+      
+      // Update search history for recommendations
+      const uniqueQueries = [...new Set([query.trim(), ...searchHistory.filter(q => q !== query.trim())])].slice(0, 20);
+      setSearchHistory(uniqueQueries);
+    } catch (error) {
+      console.error('Error saving search to history:', error);
+      // Fallback to localStorage if backend fails
+      const newSearch = { query: query.trim(), timestamp: Date.now() };
+      const updatedSearches = [newSearch, ...recentSearches.filter(s => s.query !== query.trim())].slice(0, 10);
+      setRecentSearches(updatedSearches);
+      localStorage.setItem('recentSearches', JSON.stringify(updatedSearches));
+      
+      const uniqueQueries = [...new Set([query.trim(), ...searchHistory.filter(q => q !== query.trim())])].slice(0, 20);
+      setSearchHistory(uniqueQueries);
+      localStorage.setItem('searchHistory', JSON.stringify(uniqueQueries));
+    }
+  };
+
+  // Function to generate search-based recommendations
+  const generateSearchBasedRecommendations = async (searchQuery: string) => {
+    try {
+      // Get similar creators based on search query
+      const result = await getFilteredCreators({ 
+        search: searchQuery, 
+        limit: 6,
+        tags: searchQuery.toLowerCase().includes('tag') ? availableTags.slice(0, 3).map(t => t.tag) : [],
+        contentTypes: searchQuery.toLowerCase().includes('content') || searchQuery.toLowerCase().includes('type') ? 
+          availableContentTypes.slice(0, 3).map(ct => ct.contentType) : []
+      });
+      
+      // Filter only published profiles
+      const publishedCreators = result.creators.filter((creator: any) => 
+        creator.status === 'published' && 
+        creator.publishInfo?.isPublished === true &&
+        creator.isActive !== false
+      );
+      
+      setSearchBasedRecommendations(publishedCreators);
+    } catch (error) {
+      console.error('Error generating search-based recommendations:', error);
+      setSearchBasedRecommendations([]);
+    }
   };
 
   const handleSearch = async (query: string) => {
     setSearchQuery(query);
     localStorage.setItem("searchQuery", query);
+    
     if (query.trim() === "") {
       setShowSearchResults(false);
       setSearchResults([]);
       setSearchError(null);
       return;
     }
+    
     setSearchLoading(true);
     setSearchError(null);
     setShowSearchResults(true);
+    
     try {
       const res = await getFilteredCreators({ search: query, limit: 5 });
       setSearchResults(res.creators);
+      
+      // Save search to history with results count
+      await saveSearchToHistory(query, 'text', undefined);
+      
+      // Generate search-based recommendations
+      await generateSearchBasedRecommendations(query);
     } catch (err) {
       setSearchError("Failed to fetch search results");
       setSearchResults([]);
@@ -843,10 +1141,32 @@ export function Dashboard() {
             {/* Top Creators Card */}
             <div className="bg-white rounded-3xl p-6 shadow-sm">
               <div className="flex justify-between items-center mb-4">
-                <h2 className="text-lg font-semibold text-gray-900">
-                  Best Creators
-                </h2>
-                <button className="text-purple-600 text-sm font-medium">
+                <div className="flex items-center gap-2">
+                  <h2 className="text-lg font-semibold text-gray-900">
+                    Best Creators
+                  </h2>
+                  <button 
+                    className="p-1 rounded-full hover:bg-gray-100 text-gray-500"
+                    onClick={fetchTopCreators}
+                    title="Refresh creators list"
+                    disabled={topCreatorsLoading}
+                  >
+                    {topCreatorsLoading ? (
+                      <svg className="animate-spin h-4 w-4 text-gray-500" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                        <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                        <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                      </svg>
+                    ) : (
+                      <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
+                      </svg>
+                    )}
+                  </button>
+                </div>
+                <button 
+                  className="text-purple-600 text-sm font-medium"
+                  onClick={() => router.push('/find-creators')}
+                >
                   View all
                 </button>
               </div>
@@ -890,7 +1210,10 @@ export function Dashboard() {
                           </p>
                         </div>
                       </div>
-                      <button className="text-sm text-purple-600 font-medium hover:text-purple-700">
+                      <button 
+                        className="text-sm text-purple-600 font-medium hover:text-purple-700"
+                        onClick={() => router.push(`/creator/${(creator.username || creator.personalInfo?.username || "").replace(/^@/, "").trim()}`)}
+                      >
                         View
                       </button>
                     </div>
@@ -914,7 +1237,10 @@ export function Dashboard() {
                     <ChevronRight className="w-4 h-4 text-gray-600" />
                   </button>
                 </div>
-                <button className="text-purple-600 text-sm font-medium">
+                <button 
+                  className="text-purple-600 text-sm font-medium"
+                  onClick={() => router.push('/categories')}
+                >
                   View all
                 </button>
               </div>
@@ -1006,7 +1332,7 @@ export function Dashboard() {
                         fullName={creator.name || creator.personalInfo?.username || ''}
                         avatar={creator.avatar || creator.personalInfo?.profileImage}
                         categories={creator.professionalInfo?.categories || []}
-                        level={creator.level || creator.professionalInfo?.title || ''}
+                        // level={creator.level || creator.professionalInfo?.title || ''}
                         description={creator.description || creator.descriptionFaq?.briefDescription || ''}
                         rating={creator.rating || creator.metrics?.ratings?.average || 0}
                         reviewCount={Array.isArray(creator.reviews) ? creator.reviews.length : (creator.reviews || creator.metrics?.ratings?.count || 0)}
@@ -1015,12 +1341,11 @@ export function Dashboard() {
                         title={creator.title || creator.professionalInfo?.title || ''}
                         completedProjects={creator.metrics?.profileMetrics?.projectsCompleted || creator.metrics?.completedProjects || 0}
                         socialMedia={{
-                          instagram: creator.socialMedia?.socialProfiles?.instagram?.url,
-                          twitter: creator.socialMedia?.socialProfiles?.twitter?.url,
-                          linkedin: creator.socialMedia?.socialProfiles?.linkedin?.url,
-                          youtube: creator.socialMedia?.socialProfiles?.youtube?.url,
-                          facebook: creator.socialMedia?.socialProfiles?.facebook?.url,
-                          tiktok: creator.socialMedia?.socialProfiles?.tiktok?.url,
+                         instagram: creator.socialMedia?.socialProfiles?.instagram?.url || creator.socialMedia?.socialProfiles?.instagram,
+                          twitter: creator.socialMedia?.socialProfiles?.twitter?.url   || creator.socialMedia?.socialProfiles?.twitter,
+                          linkedin: creator.socialMedia?.socialProfiles?.linkedin?.url || creator.socialMedia?.socialProfiles?.linkedin,
+                          youtube: creator.socialMedia?.socialProfiles?.youtube?.url || creator.socialMedia?.socialProfiles?.youtube,
+                          facebook: creator.socialMedia?.socialProfiles?.facebook?.url || creator.socialMedia?.socialProfiles?.facebook,
                         }}
                       />
                     </SwiperSlide>
@@ -1072,7 +1397,7 @@ export function Dashboard() {
                         fullName={creator.name || creator.personalInfo?.username || ''}
                         avatar={creator.avatar || creator.personalInfo?.profileImage}
                         categories={creator.professionalInfo?.categories || []}
-                        level={creator.level || creator.professionalInfo?.title || ''}
+                        // level={creator.level || creator.professionalInfo?.title || ''}
                         description={creator.description || creator.descriptionFaq?.briefDescription || ''}
                         rating={creator.rating || creator.metrics?.ratings?.average || 0}
                         reviewCount={Array.isArray(creator.reviews) ? creator.reviews.length : (creator.reviews || creator.metrics?.ratings?.count || 0)}
@@ -1081,12 +1406,12 @@ export function Dashboard() {
                         title={creator.title || creator.professionalInfo?.title || ''}
                         completedProjects={creator.metrics?.profileMetrics?.projectsCompleted || creator.metrics?.completedProjects || 0}
                         socialMedia={{
-                          instagram: creator.socialMedia?.socialProfiles?.instagram?.url,
-                          twitter: creator.socialMedia?.socialProfiles?.twitter?.url,
-                          linkedin: creator.socialMedia?.socialProfiles?.linkedin?.url,
-                          youtube: creator.socialMedia?.socialProfiles?.youtube?.url,
-                          facebook: creator.socialMedia?.socialProfiles?.facebook?.url,
-                          tiktok: creator.socialMedia?.socialProfiles?.tiktok?.url,
+                          instagram: creator.socialMedia?.socialProfiles?.instagram?.url || creator.socialMedia?.socialProfiles?.instagram,
+                          twitter: creator.socialMedia?.socialProfiles?.twitter?.url   || creator.socialMedia?.socialProfiles?.twitter,
+                          linkedin: creator.socialMedia?.socialProfiles?.linkedin?.url || creator.socialMedia?.socialProfiles?.linkedin,
+                          youtube: creator.socialMedia?.socialProfiles?.youtube?.url || creator.socialMedia?.socialProfiles?.youtube,
+                          facebook: creator.socialMedia?.socialProfiles?.facebook?.url || creator.socialMedia?.socialProfiles?.facebook,
+                          // tiktok: creator.socialMedia?.socialProfiles?.tiktok?.url || creator.socialMedia?.socialProfiles?.tiktok,
                         }}
                       />
                     </SwiperSlide>
@@ -1094,6 +1419,239 @@ export function Dashboard() {
                 </Swiper>
                 {bestCreatorsLoading && <div>Loading best creators...</div>}
                 {!bestCreatorsLoading && bestCreators.length === 0 && <div>No best creators found.</div>}
+              </div>
+            </section>
+          )}
+
+          {/* Tag-Based Recommendations Section */}
+          {isAuthenticated && user?.role === 'brand' && tagBasedRecommendations.length > 0 && (
+            <section className="mb-10">
+              <div className="flex items-center justify-between mb-6">
+                <h2 className="text-xl font-semibold text-gray-900">
+                  Trending in {availableTags.slice(0, 3).map(t => t.tag).join(', ')}
+                </h2>
+                <div className="flex items-center gap-4">
+                  <div className="flex gap-2">
+                    <button className="tag-recommendations-prev p-1.5 rounded-lg bg-gray-50 hover:bg-gray-100 disabled:opacity-50 disabled:cursor-not-allowed">
+                      <ChevronLeft className="w-4 h-4 text-gray-600" />
+                    </button>
+                    <button className="tag-recommendations-next p-1.5 rounded-lg bg-gray-50 hover:bg-gray-100 disabled:opacity-50 disabled:cursor-not-allowed">
+                      <ChevronRight className="w-4 h-4 text-gray-600" />
+                    </button>
+                  </div>
+                  <Link href="/find-creators" className="text-purple-600 text-sm font-medium">View all</Link>
+                </div>
+              </div>
+              <div className="relative">
+                <Swiper
+                  modules={[Navigation, Grid]}
+                  spaceBetween={16}
+                  slidesPerView={1}
+                  navigation={{
+                    prevEl: ".tag-recommendations-prev",
+                    nextEl: ".tag-recommendations-next",
+                  }}
+                  breakpoints={{
+                    640: { slidesPerView: 2 },
+                    1024: { slidesPerView: 3 },
+                  }}
+                  className="tag-recommendations-slider"
+                >
+                  {tagBasedRecommendations.map((creator) => (
+                    <SwiperSlide key={creator.id || creator._id}>
+                      <CreatorCard
+                        id={creator.id || creator._id}
+                        username={creator.username || creator.personalInfo?.username || ''}
+                        fullName={creator.name || creator.personalInfo?.username || ''}
+                        avatar={creator.avatar || creator.personalInfo?.profileImage}
+                        categories={creator.professionalInfo?.categories || []}
+                        description={creator.description || creator.descriptionFaq?.briefDescription || ''}
+                        rating={creator.rating || creator.metrics?.ratings?.average || 0}
+                        reviewCount={Array.isArray(creator.reviews) ? creator.reviews.length : (creator.reviews || creator.metrics?.ratings?.count || 0)}
+                        startingPrice={creator.startingPrice || (creator.pricing?.basic?.price ? `₹${creator.pricing.basic.price}` : undefined)}
+                        isLiked={false}
+                        title={creator.title || creator.professionalInfo?.title || ''}
+                        completedProjects={creator.metrics?.profileMetrics?.projectsCompleted || creator.metrics?.completedProjects || 0}
+                        socialMedia={{
+                          instagram: creator.socialMedia?.socialProfiles?.instagram?.url || creator.socialMedia?.socialProfiles?.instagram,
+                          twitter: creator.socialMedia?.socialProfiles?.twitter?.url   || creator.socialMedia?.socialProfiles?.twitter,
+                          linkedin: creator.socialMedia?.socialProfiles?.linkedin?.url || creator.socialMedia?.socialProfiles?.linkedin,
+                          youtube: creator.socialMedia?.socialProfiles?.youtube?.url || creator.socialMedia?.socialProfiles?.youtube,
+                          facebook: creator.socialMedia?.socialProfiles?.facebook?.url || creator.socialMedia?.socialProfiles?.facebook,
+                        }}
+                      />
+                    </SwiperSlide>
+                  ))}
+                </Swiper>
+              </div>
+            </section>
+          )}
+
+          {/* Content Type-Based Recommendations Section */}
+          {isAuthenticated && user?.role === 'brand' && contentTypeBasedRecommendations.length > 0 && (
+            <section className="mb-10">
+              <div className="flex items-center justify-between mb-6">
+                <h2 className="text-xl font-semibold text-gray-900">
+                  Popular {availableContentTypes.slice(0, 3).map(ct => ct.contentType).join(', ')} Creators
+                </h2>
+                <div className="flex items-center gap-4">
+                  <div className="flex gap-2">
+                    <button className="content-type-recommendations-prev p-1.5 rounded-lg bg-gray-50 hover:bg-gray-100 disabled:opacity-50 disabled:cursor-not-allowed">
+                      <ChevronLeft className="w-4 h-4 text-gray-600" />
+                    </button>
+                    <button className="content-type-recommendations-next p-1.5 rounded-lg bg-gray-50 hover:bg-gray-100 disabled:opacity-50 disabled:cursor-not-allowed">
+                      <ChevronRight className="w-4 h-4 text-gray-600" />
+                    </button>
+                  </div>
+                  <Link href="/find-creators" className="text-purple-600 text-sm font-medium">View all</Link>
+                </div>
+              </div>
+              <div className="relative">
+                <Swiper
+                  modules={[Navigation, Grid]}
+                  spaceBetween={16}
+                  slidesPerView={1}
+                  navigation={{
+                    prevEl: ".content-type-recommendations-prev",
+                    nextEl: ".content-type-recommendations-next",
+                  }}
+                  breakpoints={{
+                    640: { slidesPerView: 2 },
+                    1024: { slidesPerView: 3 },
+                  }}
+                  className="content-type-recommendations-slider"
+                >
+                  {contentTypeBasedRecommendations.map((creator) => (
+                    <SwiperSlide key={creator.id || creator._id}>
+                      <CreatorCard
+                        id={creator.id || creator._id}
+                        username={creator.username || creator.personalInfo?.username || ''}
+                        fullName={creator.name || creator.personalInfo?.username || ''}
+                        avatar={creator.avatar || creator.personalInfo?.profileImage}
+                        categories={creator.professionalInfo?.categories || []}
+                        description={creator.description || creator.descriptionFaq?.briefDescription || ''}
+                        rating={creator.rating || creator.metrics?.ratings?.average || 0}
+                        reviewCount={Array.isArray(creator.reviews) ? creator.reviews.length : (creator.reviews || creator.metrics?.ratings?.count || 0)}
+                        startingPrice={creator.startingPrice || (creator.pricing?.basic?.price ? `₹${creator.pricing.basic.price}` : undefined)}
+                        isLiked={false}
+                        title={creator.title || creator.professionalInfo?.title || ''}
+                        completedProjects={creator.metrics?.profileMetrics?.projectsCompleted || creator.metrics?.completedProjects || 0}
+                        socialMedia={{
+                          instagram: creator.socialMedia?.socialProfiles?.instagram?.url || creator.socialMedia?.socialProfiles?.instagram,
+                          twitter: creator.socialMedia?.socialProfiles?.twitter?.url   || creator.socialMedia?.socialProfiles?.twitter,
+                          linkedin: creator.socialMedia?.socialProfiles?.linkedin?.url || creator.socialMedia?.socialProfiles?.linkedin,
+                          youtube: creator.socialMedia?.socialProfiles?.youtube?.url || creator.socialMedia?.socialProfiles?.youtube,
+                          facebook: creator.socialMedia?.socialProfiles?.facebook?.url || creator.socialMedia?.socialProfiles?.facebook,
+                        }}
+                      />
+                    </SwiperSlide>
+                  ))}
+                </Swiper>
+              </div>
+            </section>
+          )}
+
+          {/* Search-Based Recommendations Section */}
+          {isAuthenticated && user?.role === 'brand' && searchBasedRecommendations.length > 0 && (
+            <section className="mb-10">
+              <div className="flex items-center justify-between mb-6">
+                <h2 className="text-xl font-semibold text-gray-900">
+                  Similar to "{searchHistory[0] || 'your search'}"
+                </h2>
+                <div className="flex items-center gap-4">
+                  <div className="flex gap-2">
+                    <button className="search-recommendations-prev p-1.5 rounded-lg bg-gray-50 hover:bg-gray-100 disabled:opacity-50 disabled:cursor-not-allowed">
+                      <ChevronLeft className="w-4 h-4 text-gray-600" />
+                    </button>
+                    <button className="search-recommendations-next p-1.5 rounded-lg bg-gray-50 hover:bg-gray-100 disabled:opacity-50 disabled:cursor-not-allowed">
+                      <ChevronRight className="w-4 h-4 text-gray-600" />
+                    </button>
+                  </div>
+                  <Link href="/find-creators" className="text-purple-600 text-sm font-medium">View all</Link>
+                </div>
+              </div>
+              <div className="relative">
+                <Swiper
+                  modules={[Navigation, Grid]}
+                  spaceBetween={16}
+                  slidesPerView={1}
+                  navigation={{
+                    prevEl: ".search-recommendations-prev",
+                    nextEl: ".search-recommendations-next",
+                  }}
+                  breakpoints={{
+                    640: { slidesPerView: 2 },
+                    1024: { slidesPerView: 3 },
+                  }}
+                  className="search-recommendations-slider"
+                >
+                  {searchBasedRecommendations.map((creator) => (
+                    <SwiperSlide key={creator.id || creator._id}>
+                      <CreatorCard
+                        id={creator.id || creator._id}
+                        username={creator.username || creator.personalInfo?.username || ''}
+                        fullName={creator.name || creator.personalInfo?.username || ''}
+                        avatar={creator.avatar || creator.personalInfo?.profileImage}
+                        categories={creator.professionalInfo?.categories || []}
+                        description={creator.description || creator.descriptionFaq?.briefDescription || ''}
+                        rating={creator.rating || creator.metrics?.ratings?.average || 0}
+                        reviewCount={Array.isArray(creator.reviews) ? creator.reviews.length : (creator.reviews || creator.metrics?.ratings?.count || 0)}
+                        startingPrice={creator.startingPrice || (creator.pricing?.basic?.price ? `₹${creator.pricing.basic.price}` : undefined)}
+                        isLiked={false}
+                        title={creator.title || creator.professionalInfo?.title || ''}
+                        completedProjects={creator.metrics?.profileMetrics?.projectsCompleted || creator.metrics?.completedProjects || 0}
+                        socialMedia={{
+                          instagram: creator.socialMedia?.socialProfiles?.instagram?.url || creator.socialMedia?.socialProfiles?.instagram,
+                          twitter: creator.socialMedia?.socialProfiles?.twitter?.url   || creator.socialMedia?.socialProfiles?.twitter,
+                          linkedin: creator.socialMedia?.socialProfiles?.linkedin?.url || creator.socialMedia?.socialProfiles?.linkedin,
+                          youtube: creator.socialMedia?.socialProfiles?.youtube?.url || creator.socialMedia?.socialProfiles?.youtube,
+                          facebook: creator.socialMedia?.socialProfiles?.facebook?.url || creator.socialMedia?.socialProfiles?.facebook,
+                        }}
+                      />
+                    </SwiperSlide>
+                  ))}
+                </Swiper>
+              </div>
+            </section>
+          )}
+
+          {/* Recent Searches Section */}
+          {isAuthenticated && user?.role === 'brand' && recentSearches.length > 0 && (
+            <section className="mb-10">
+              <div className="flex items-center justify-between mb-6">
+                <h2 className="text-xl font-semibold text-gray-900">Recent Searches</h2>
+                <button 
+                  onClick={async () => {
+                    try {
+                      await clearSearchHistory();
+                      setRecentSearches([]);
+                      setSearchHistory([]);
+                      localStorage.removeItem('recentSearches');
+                      localStorage.removeItem('searchHistory');
+                    } catch (error) {
+                      console.error('Error clearing search history:', error);
+                      // Fallback to local clearing
+                      setRecentSearches([]);
+                      setSearchHistory([]);
+                      localStorage.removeItem('recentSearches');
+                      localStorage.removeItem('searchHistory');
+                    }
+                  }}
+                  className="text-purple-600 text-sm font-medium hover:text-purple-700"
+                >
+                  Clear history
+                </button>
+              </div>
+              <div className="flex flex-wrap gap-2">
+                {recentSearches.slice(0, 8).map((search, index) => (
+                  <button
+                    key={index}
+                    onClick={() => handleSearch(search.query)}
+                    className="px-4 py-2 bg-gray-100 hover:bg-gray-200 text-gray-700 rounded-full text-sm font-medium transition-colors"
+                  >
+                    {search.query}
+                  </button>
+                ))}
               </div>
             </section>
           )}
@@ -1158,7 +1716,7 @@ export function Dashboard() {
                         fullName: `${profile.personalInfo?.firstName || ''} ${profile.personalInfo?.lastName || ''}`.trim(),
                         avatar: profile.personalInfo?.profileImage,
                         category: profile.professionalInfo?.categories?.join(', ') || '',
-                        level: profile.professionalInfo?.title || '',
+                        // level: profile.professionalInfo?.title || '',
                         description: profile.descriptionFaq?.briefDescription || '',
                         rating: profile.metrics?.ratings?.average || 0,
                         reviewCount: profile.metrics?.ratings?.count || 0,
@@ -1167,12 +1725,12 @@ export function Dashboard() {
                         title: profile.professionalInfo?.title || '',
                         completedProjects: match.metrics?.profileMetrics?.projectsCompleted || match.metrics?.completedProjects || 0,
                         socialMedia: {
-                          instagram: profile.socialMedia?.socialProfiles?.instagram?.url,
-                          twitter: profile.socialMedia?.socialProfiles?.twitter?.url,
-                          linkedin: profile.socialMedia?.socialProfiles?.linkedin?.url,
-                          youtube: profile.socialMedia?.socialProfiles?.youtube?.url,
-                          facebook: profile.socialMedia?.socialProfiles?.facebook?.url,
-                          tiktok: profile.socialMedia?.socialProfiles?.tiktok?.url,
+                           instagram: profile.socialMedia?.socialProfiles?.instagram?.url || profile.socialMedia?.socialProfiles?.instagram,
+                          twitter: profile.socialMedia?.socialProfiles?.twitter?.url   || profile.socialMedia?.socialProfiles?.twitter,
+                          linkedin: profile.socialMedia?.socialProfiles?.linkedin?.url || profile.socialMedia?.socialProfiles?.linkedin,
+                          youtube: profile.socialMedia?.socialProfiles?.youtube?.url || profile.socialMedia?.socialProfiles?.youtube,
+                          facebook: profile.socialMedia?.socialProfiles?.facebook?.url || profile.socialMedia?.socialProfiles?.facebook,
+                          // tiktok: creator.socialMedia?.socialProfiles?.tiktok?.url || creator.socialMedia?.socialProfiles?.tiktok,
                         },
                       };
                       return (
@@ -1220,12 +1778,12 @@ export function Dashboard() {
                         title={creator.title || creator.professionalInfo?.title || ''}
                         completedProjects={creator.metrics?.profileMetrics?.projectsCompleted || creator.metrics?.completedProjects || 0}
                         socialMedia={{
-                          instagram: creator.socialMedia?.socialProfiles?.instagram?.url,
-                          twitter: creator.socialMedia?.socialProfiles?.twitter?.url,
-                          linkedin: creator.socialMedia?.socialProfiles?.linkedin?.url,
-                          youtube: creator.socialMedia?.socialProfiles?.youtube?.url,
-                          facebook: creator.socialMedia?.socialProfiles?.facebook?.url,
-                          tiktok: creator.socialMedia?.socialProfiles?.tiktok?.url,
+                          instagram: creator.socialMedia?.socialProfiles?.instagram?.url || creator.socialMedia?.socialProfiles?.instagram,
+                          twitter: creator.socialMedia?.socialProfiles?.twitter?.url || creator.socialMedia?.socialProfiles?.twitter,
+                          linkedin: creator.socialMedia?.socialProfiles?.linkedin?.url || creator.socialMedia?.socialProfiles?.linkedin,
+                          youtube: creator.socialMedia?.socialProfiles?.youtube?.url || creator.socialMedia?.socialProfiles?.youtube,
+                          facebook: creator.socialMedia?.socialProfiles?.facebook?.url || creator.socialMedia?.socialProfiles?.facebook,
+                          // tiktok: creator.socialMedia?.socialProfiles?.tiktok?.url || creator.socialMedia?.socialProfiles?.tiktok,
                         }}
                       />
                     ))}
@@ -1237,7 +1795,7 @@ export function Dashboard() {
 
           {/* Top Creators Section */}
           <div>
-            <PublishedCreators title="Top Creators" />
+            <PublishedCreators title="Top Creators" limit={9} />
           </div>
         </main>
       </DashboardLayout>

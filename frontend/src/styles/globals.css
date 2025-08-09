@@ -8,11 +8,98 @@
 }
 
 /* Hide scrollbars for tab navigation */
+/* Add these utilities to your existing globals.css file */
+
+/* Hide scrollbar but maintain functionality */
 .hide-scrollbar {
   -ms-overflow-style: none;  /* IE and Edge */
   scrollbar-width: none;  /* Firefox */
 }
 
 .hide-scrollbar::-webkit-scrollbar {
-  display: none;  /* Chrome, Safari and Opera */
-} 
+  display: none; /* Chrome, Safari, Opera */
+}
+
+/* Improve touch scrolling */
+.touch-pan-x {
+  touch-action: pan-x;
+}
+
+/* Responsive container padding */
+.container-mobile-padding {
+  padding-left: 1rem;
+  padding-right: 1rem;
+}
+
+@media (min-width: 640px) {
+  .container-mobile-padding {
+    padding-left: 1.5rem;
+    padding-right: 1.5rem;
+  }
+}
+
+@media (min-width: 768px) {
+  .container-mobile-padding {
+    padding-left: 2rem;
+    padding-right: 2rem;
+  }
+}
+
+/* Smooth scrolling for the entire page */
+html {
+  scroll-behavior: smooth;
+}
+
+/* Improved touch scrolling for mobile */
+.touch-scroll {
+  -webkit-overflow-scrolling: touch;
+}
+
+/* Responsive text sizing */
+@media (max-width: 640px) {
+  html {
+    font-size: 14px;
+  }
+}
+
+/* Pulse animation for interactive elements */
+@keyframes pulse-subtle {
+  0%, 100% {
+    transform: scale(1);
+  }
+  50% {
+    transform: scale(1.05);
+  }
+}
+
+.animate-pulse-subtle {
+  animation: pulse-subtle 2s infinite;
+}
+
+/* Card hover effects */
+.card-hover-effect {
+  transition: transform 0.3s ease, box-shadow 0.3s ease, border-color 0.3s ease;
+}
+
+.card-hover-effect:hover {
+  transform: translateY(-4px);
+  box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.1), 0 8px 10px -6px rgba(0, 0, 0, 0.05);
+  border-color: rgba(168, 85, 247, 0.2);
+}
+
+/* Improved scrolling for mobile */
+.smooth-scroll-container {
+  scroll-behavior: smooth;
+  -webkit-overflow-scrolling: touch;
+  scrollbar-width: none;
+}
+
+/* Subtle card animations */
+@keyframes card-appear {
+  from { opacity: 0; transform: translateY(10px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+.card-appear {
+  animation: card-appear 0.4s ease-out forwards;
+}

@@ -7,6 +7,7 @@ const express_1 = require("express");
 const userRoutes_1 = __importDefault(require("./userRoutes"));
 const authRoutes_1 = __importDefault(require("./authRoutes"));
 const brandProfileRoutes_1 = __importDefault(require("./brandProfileRoutes")); // Import the new brand profile routes
+const brandRecommendationRoutes_1 = __importDefault(require("./brandRecommendationRoutes")); // Import brand recommendation routes
 const notificationRoutes_1 = __importDefault(require("./notificationRoutes"));
 const reviewRoutes_1 = __importDefault(require("./reviewRoutes"));
 const categoryRoutes_1 = __importDefault(require("./categoryRoutes"));
@@ -23,6 +24,7 @@ const router = (0, express_1.Router)();
 router.use('/users', userRoutes_1.default);
 router.use('/auth', authRoutes_1.default);
 router.use('/brand-profiles', brandProfileRoutes_1.default); // Mount the new brand profile routes
+router.use('/brand-recommendations', brandRecommendationRoutes_1.default); // Mount brand recommendation routes
 router.use('/notifications', notificationRoutes_1.default);
 router.use('/reviews', reviewRoutes_1.default);
 router.use('/categories', categoryRoutes_1.default);

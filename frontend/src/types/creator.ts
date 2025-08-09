@@ -72,12 +72,19 @@ export const mapBackendCreatorToCardData = (
                   creator.pricing?.basic?.price || 
                   creator.pricing?.premium?.price || 0;
 
+  // Helper function to extract URL as string from social media profile
+  const getUrlAsString = (profile: { url?: string } | string | undefined): string | undefined => {
+    if (typeof profile === 'string') return profile;
+    if (profile && typeof profile === 'object' && 'url' in profile) return profile.url;
+    return undefined;
+  };
+
   // Map social media URLs
   const socialMedia = {
-    instagram: creator.socialMedia?.socialProfiles?.instagram?.url,
-    twitter: creator.socialMedia?.socialProfiles?.twitter?.url,
-    youtube: creator.socialMedia?.socialProfiles?.youtube?.url,
-    tiktok: creator.socialMedia?.socialProfiles?.tiktok?.url,
+    instagram: getUrlAsString(creator.socialMedia?.socialProfiles?.instagram),
+    twitter: getUrlAsString(creator.socialMedia?.socialProfiles?.twitter),
+    youtube: getUrlAsString(creator.socialMedia?.socialProfiles?.youtube),
+    tiktok: getUrlAsString(creator.socialMedia?.socialProfiles?.tiktok),
   };
 
   return {
@@ -151,4 +158,4 @@ export interface Availability {
   status: 'available' | 'busy' | 'unavailable';
   message?: string;
   nextAvailableDate?: string;
-} 
+}

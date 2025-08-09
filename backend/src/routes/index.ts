@@ -2,6 +2,7 @@ import { Router } from 'express';
 import userRoutes from './userRoutes';
 import authRoutes from './authRoutes';
 import brandProfileRoutes from './brandProfileRoutes'; // Import the new brand profile routes
+import brandRecommendationRoutes from './brandRecommendationRoutes'; // Import brand recommendation routes
 import notificationRoutes from './notificationRoutes';
 import reviewRoutes from './reviewRoutes';
 import categoryRoutes from './categoryRoutes';
@@ -20,6 +21,7 @@ const router = Router();
 router.use('/users', userRoutes);
 router.use('/auth', authRoutes);
 router.use('/brand-profiles', brandProfileRoutes); // Mount the new brand profile routes
+router.use('/brand-recommendations', brandRecommendationRoutes); // Mount brand recommendation routes
 router.use('/notifications', notificationRoutes);
 router.use('/reviews', reviewRoutes);
 router.use('/categories', categoryRoutes);
@@ -35,4 +37,4 @@ router.use('/social-media-preferences', socialMediaPreferenceRoutes);
 // Add matching endpoint (remove '/api' prefix)
 router.get('/match/brand/:brandId', getBestCreatorMatchesForBrand);
 
-export default router; 
+export default router;

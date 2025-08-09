@@ -323,8 +323,10 @@ export const getBestCreatorMatchesForBrand = async (req: Request, res: Response)
     if (campaignId) {
       campaign = await Promotion.findById(campaignId);
     }
+    
+    // Return empty matches if brand or preferences don't exist
     if (!brand || !preference) {
-      return res.status(404).json({ message: 'Brand or preferences not found' });
+      return res.status(200).json({ matches: [] });
     }
 
     // Fetch all published creators
@@ -353,4 +355,4 @@ export const getBestCreatorMatchesForBrand = async (req: Request, res: Response)
     console.error('Matching error:', err);
     return res.status(500).json({ message: 'Internal server error' });
   }
-}; 
+};

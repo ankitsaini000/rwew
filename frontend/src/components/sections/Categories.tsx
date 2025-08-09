@@ -131,57 +131,63 @@ export const Categories = () => {
   };
 
   return (
-    <section className="py-16 bg-white">
-      <div className="container mx-auto px-4">
+    <section className="py-6 md:py-16 relative overflow-hidden">
+      {/* Enhanced Decorative background */}
+      <div className="absolute top-0 right-0 w-40 md:w-80 h-40 md:h-80 bg-blue-100 rounded-full mix-blend-multiply filter blur-3xl opacity-30"></div>
+      <div className="absolute bottom-0 left-0 w-40 md:w-80 h-40 md:h-80 bg-purple-100 rounded-full mix-blend-multiply filter blur-3xl opacity-30"></div>
+      <div className="absolute top-1/3 left-1/4 w-32 md:w-64 h-32 md:h-64 bg-pink-100 rounded-full mix-blend-multiply filter blur-3xl opacity-20"></div>
+      
+      <div className="container mx-auto px-3 md:px-4 relative z-10">
         {/* Header with Title and Navigation */}
-        <div className="flex items-center justify-between mb-12">
-          <h2 className="text-2xl font-bold text-gray-900">
+        <div className="flex items-center justify-between mb-4 md:mb-12">
+          <h2 className="text-lg md:text-2xl font-bold bg-clip-text text-transparent bg-gradient-to-r from-purple-600 to-pink-600 animate-fadeInRight">
             Choose your Categories
           </h2>
-          <div className="flex gap-2">
+          <div className="flex gap-1 md:gap-2 animate-fadeInLeft">
             <button
               onClick={() => scrollCategories("left")}
-              className="p-2 rounded-full border border-gray-200 hover:border-purple-400 hover:text-purple-600 transition-colors"
+              className="p-1 md:p-2 rounded-full bg-transparent backdrop-blur-sm border border-white/20 hover:bg-white/40 hover:text-purple-600 transition-all"
             >
-              <ChevronLeft className="h-5 w-5" />
+              <ChevronLeft className="h-3.5 w-3.5 md:h-5 md:w-5" />
             </button>
             <button
               onClick={() => scrollCategories("right")}
-              className="p-2 rounded-full border border-gray-200 hover:border-purple-400 hover:text-purple-600 transition-colors"
+              className="p-1 md:p-2 rounded-full bg-transparent backdrop-blur-sm border border-white/20 hover:bg-white/40 hover:text-purple-600 transition-all"
             >
-              <ChevronRight className="h-5 w-5" />
+              <ChevronRight className="h-3.5 w-3.5 md:h-5 md:w-5" />
             </button>
           </div>
         </div>
 
         {/* Categories Slider */}
-        <div className="relative max-w-6xl mx-auto">
+        <div className="relative max-w-full md:max-w-6xl mx-auto">
           {loading ? (
-            <div className="text-center text-gray-500 py-12">Loading categories...</div>
+            <div className="text-center text-gray-500 py-6 md:py-12 bg-transparent backdrop-blur-sm border border-white/20">Loading categories...</div>
           ) : error ? (
-            <div className="text-center text-red-500 py-12">{error}</div>
+            <div className="text-center text-red-500 py-6 md:py-12 bg-transparent backdrop-blur-sm border border-white/20">{error}</div>
           ) : categories.length === 0 ? (
-            <div className="text-center text-gray-400 py-12">No categories found.</div>
+            <div className="text-center text-gray-400 py-6 md:py-12 bg-transparent backdrop-blur-sm border border-white/20">No categories found.</div>
           ) : (
             <div
               id="categories-container"
-              className="flex overflow-x-hidden scroll-smooth gap-8 px-4"
+              className="flex overflow-x-auto scroll-smooth gap-3 md:gap-8 px-2 md:px-4 pb-4 md:pb-0 hide-scrollbar touch-pan-x snap-x snap-mandatory"
             >
               {categories.map((category, idx) => (
                 <div
                   key={category.name || category.title || idx}
-                  className="flex-shrink-0 w-[160px] cursor-pointer group"
+                  className="flex-shrink-0 w-[100px] md:w-[160px] cursor-pointer group animate-fadeInUp snap-start"
+                  style={{ animationDelay: `${idx * 0.05}s` }}
                   onClick={() => handleCategoryClick(category.name)}
                 >
                   <div className="flex flex-col items-center">
-                    {/* Circle with Emoji Icon */}
-                    <div className={`w-20 h-20 rounded-full flex items-center justify-center mb-4 shadow-md border border-gray-100 transition-all duration-300 group-hover:scale-110 group-hover:shadow-lg ${categoryBgColors[category.name] || "bg-gray-50"}`}>
-                      <span className="text-4xl">
+                    {/* Circle with Emoji Icon - Removed white background */}
+                    <div className="w-14 h-14 md:w-20 md:h-20 rounded-full bg-transparent backdrop-blur-sm flex items-center justify-center mb-2 md:mb-4 transition-all duration-300 group-hover:scale-110 group-hover:shadow-lg border border-white/20">
+                      <span className="text-2xl md:text-4xl">
                         {categoryEmojis[category.name] || "❓"}
                       </span>
                     </div>
                     {/* Category Title */}
-                    <span className="text-sm font-medium text-gray-900 text-center">
+                    <span className="text-xs md:text-sm font-medium text-gray-900 text-center">
                       {category.name || category.title}
                     </span>
                   </div>
@@ -190,9 +196,9 @@ export const Categories = () => {
             </div>
           )}
 
-          {/* Gradient Overlays */}
-          <div className="absolute left-0 top-0 bottom-0 w-16 bg-gradient-to-r from-white to-transparent pointer-events-none" />
-          <div className="absolute right-0 top-0 bottom-0 w-16 bg-gradient-to-l from-white to-transparent pointer-events-none" />
+          {/* Gradient Overlays with background color instead of white */}
+          <div className="absolute left-0 top-0 bottom-0 w-8 md:w-16 bg-gradient-to-r from-[#f5f7ff] to-transparent pointer-events-none opacity-50" />
+          <div className="absolute right-0 top-0 bottom-0 w-8 md:w-16 bg-gradient-to-l from-[#f5f7ff] to-transparent pointer-events-none opacity-50" />
         </div>
       </div>
     </section>

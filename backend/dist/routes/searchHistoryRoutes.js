@@ -32,14 +32,28 @@ var __importStar = (this && this.__importStar) || (function () {
         return result;
     };
 })();
+var __importDefault = (this && this.__importDefault) || function (mod) {
+    return (mod && mod.__esModule) ? mod : { "default": mod };
+};
 Object.defineProperty(exports, "__esModule", { value: true });
-const mongoose_1 = __importStar(require("mongoose"));
-const brandRecommendationSchema = new mongoose_1.Schema({
-    brand_id: { type: mongoose_1.Schema.Types.ObjectId, ref: 'User', required: true, unique: true },
-    recommended_creators: [{ type: mongoose_1.Schema.Types.ObjectId, ref: 'CreatorProfile' }],
-    last_updated: { type: Date, default: Date.now },
-}, {
-    timestamps: true // This adds createdAt and updatedAt automatically
-});
-const BrandRecommendation = mongoose_1.default.model('BrandRecommendation', brandRecommendationSchema);
-exports.default = BrandRecommendation;
+const express_1 = __importDefault(require("express"));
+const authMiddleware_1 = require("../middleware/authMiddleware");
+const searchHistoryController = __importStar(require("../controllers/searchHistoryController"));
+const router = express_1.default.Router();
+// All routes require authentication
+router.use(authMiddleware_1.protect);
+// Save search to history
+router.post('/', searchHistoryController.saveSearchHistory);
+// Get user's search history
+router.get('/', searchHistoryController.getSearchHistory);
+// Get recent searches for recommendations
+router.get('/recent', searchHistoryController.getRecentSearches);
+// Get search analytics (brand only)
+router.get('/analytics', searchHistoryController.getSearchAnalytics);
+// Get search recommendations based on history
+router.get('/recommendations', searchHistoryController.getSearchRecommendations);
+// Update search history with clicked creator
+router.put('/:id/click', searchHistoryController.updateSearchClick);
+// Clear user's search history
+router.delete('/', searchHistoryController.clearSearchHistory);
+exports.default = router;

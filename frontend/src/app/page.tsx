@@ -19,10 +19,10 @@ export default function HomePageSections() {
     <>
       <Header />
       <Hero selectedCategory={selectedCategory} setSelectedCategory={setSelectedCategory} />
+      <TopInfluencers />
+      <Categories />
       <Features selectedCategory={selectedCategory} />
       <HowItWorks />
-      <Categories />
-      <TopInfluencers />
       <Stats />
       <Testimonials />
       <VideoSection />

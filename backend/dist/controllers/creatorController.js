@@ -3,7 +3,7 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
     return (mod && mod.__esModule) ? mod : { "default": mod };
 };
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.getSimilarCreators = exports.reactivateCreator = exports.getSuspendedCreators = exports.deactivateCreator = exports.dashboardImpression = exports.syncProfileImage = exports.forceUpdateCompleteness = exports.uploadProfileImage = exports.acceptOrder = exports.syncCreatorMetrics = exports.getCreatorDashboardData = exports.getPublishedCreators = exports.testGalleryStorage = exports.debugProfileData = exports.emergencyFixProfile = exports.forceCompleteProfile = exports.testCreator = exports.upgradeToCreator = exports.checkUsername = exports.publishProfile = exports.getCompletionStatus = exports.saveGallery = exports.saveRequirements = exports.savePricing = exports.saveSocialInfo = exports.saveDescription = exports.saveBasicInfo = exports.saveProfessionalInfo = exports.savePersonalInfo = exports.updateCreatorProfile = exports.getProfileData = exports.getPublicCreatorProfile = exports.getMyCreatorProfile = exports.getCreators = exports.createCreatorProfile = void 0;
+exports.getAvailableContentTypes = exports.getAvailableTags = exports.getSimilarCreators = exports.reactivateCreator = exports.getSuspendedCreators = exports.deactivateCreator = exports.dashboardImpression = exports.syncProfileImage = exports.forceUpdateCompleteness = exports.uploadProfileImage = exports.acceptOrder = exports.syncCreatorMetrics = exports.getCreatorDashboardData = exports.getPublishedCreators = exports.testGalleryStorage = exports.debugProfileData = exports.emergencyFixProfile = exports.forceCompleteProfile = exports.testCreator = exports.upgradeToCreator = exports.checkUsername = exports.publishProfile = exports.getCompletionStatus = exports.saveGallery = exports.saveRequirements = exports.savePricing = exports.saveSocialInfo = exports.saveDescription = exports.saveBasicInfo = exports.saveProfessionalInfo = exports.savePersonalInfo = exports.updateCreatorProfile = exports.getProfileData = exports.getPublicCreatorProfile = exports.getMyCreatorProfile = exports.getCreators = exports.createCreatorProfile = void 0;
 const express_async_handler_1 = __importDefault(require("express-async-handler"));
 const mongoose_1 = __importDefault(require("mongoose"));
 const CreatorProfile_1 = require("../models/CreatorProfile");
@@ -12,6 +12,7 @@ const Order_1 = __importDefault(require("../models/Order"));
 const CreatorMetrics_1 = __importDefault(require("../models/CreatorMetrics"));
 const Notification_1 = __importDefault(require("../models/Notification"));
 const sockets_1 = require("../sockets");
+const Review_1 = __importDefault(require("../models/Review"));
 /**
  * @desc    Create a new creator profile
  * @route   POST /api/creators
@@ -1735,7 +1736,7 @@ exports.testGalleryStorage = (0, express_async_handler_1.default)(async (req, re
 exports.getPublishedCreators = (0, express_async_handler_1.default)(async (req, res) => {
     try {
         console.log('Fetching published creators with filters');
-        const { searchQuery, category, platform, priceMin, priceMax, followersMin, followersMax, sortBy } = req.query;
+        const { searchQuery, category, platform, priceMin, priceMax, followersMin, followersMax, sortBy, tags, contentTypes } = req.query;
         // Parse pagination parameters
         const page = parseInt(req.query.page) || 1;
         const limit = parseInt(req.query.limit) || 9;
@@ -1748,7 +1749,7 @@ exports.getPublishedCreators = (0, express_async_handler_1.default)(async (req, 
         };
         // Add search query if provided
         if (searchQuery) {
-            // Create a text search across multiple fields
+            // Create a text search across multiple fields including tags and content types
             const searchRegex = new RegExp(searchQuery, 'i');
             filter.$or = [
                 { 'personalInfo.username': searchRegex },
@@ -1757,8 +1758,14 @@ exports.getPublishedCreators = (0, express_async_handler_1.default)(async (req, 
                 { 'professionalInfo.title': searchRegex },
                 { 'professionalInfo.categories': searchRegex },
                 { 'professionalInfo.subcategories': searchRegex },
+                { 'professionalInfo.tags': searchRegex },
+                { 'professionalInfo.contentTypes': searchRegex },
                 { 'personalInfo.location': searchRegex },
-                { 'descriptionFaq.briefDescription': searchRegex }
+                { 'descriptionFaq.briefDescription': searchRegex },
+                { 'descriptionFaq.specialties': searchRegex },
+                { 'galleryPortfolio.images.tags': searchRegex },
+                { 'galleryPortfolio.videos.tags': searchRegex },
+                { 'portfolio.tags': searchRegex }
             ];
         }
         // Add category filter if provided
@@ -1770,6 +1777,16 @@ exports.getPublishedCreators = (0, express_async_handler_1.default)(async (req, 
             // Social media platform checks - match if they have that platform set up
             const platformKey = platform.toLowerCase();
             filter[`socialMedia.socialProfiles.${platformKey}.url`] = { $exists: true, $ne: '' };
+        }
+        // Add tags filter if provided
+        if (tags) {
+            const tagsArray = Array.isArray(tags) ? tags : [tags];
+            filter['professionalInfo.tags'] = { $in: tagsArray };
+        }
+        // Add content types filter if provided
+        if (contentTypes) {
+            const contentTypesArray = Array.isArray(contentTypes) ? contentTypes : [contentTypes];
+            filter['professionalInfo.contentTypes'] = { $in: contentTypesArray };
         }
         // Add price range filters if provided
         if (priceMin) {
@@ -1807,10 +1824,6 @@ exports.getPublishedCreators = (0, express_async_handler_1.default)(async (req, 
                 case 'followers':
                     sortOptions = { 'socialMedia.totalReach': -1 };
                     break;
-                case 'engagement':
-                    // This is complex to sort by in MongoDB, default to relevance
-                    sortOptions = { 'metrics.profileViews': -1 };
-                    break;
                 case 'relevance':
                 default:
                     // For relevance, use a complex sort that considers multiple factors
@@ -1832,10 +1845,8 @@ exports.getPublishedCreators = (0, express_async_handler_1.default)(async (req, 
             .limit(limit);
         console.log(`Returning ${creators.length} creators for page ${page}`);
         // Process creators to ensure they have all required fields
-        const processedCreators = creators.map((creator) => {
-            var _a;
-            // Process each creator - extract username, ensure all required data exists
-            // This is similar to the frontend mapping function but happens on the server
+        const processedCreators = await Promise.all(creators.map(async (creator) => {
+            var _a, _b;
             const creatorId = creator._id ? creator._id.toString() : '';
             // Extract username from userId if it exists
             let username = '';
@@ -1852,13 +1863,28 @@ exports.getPublishedCreators = (0, express_async_handler_1.default)(async (req, 
             if (!username) {
                 username = `user_${creatorId.substring(0, 8)}`;
             }
+            // Calculate actual ratings and reviews from Review model
+            let actualRating = 0;
+            let actualReviewCount = 0;
+            try {
+                const creatorIdForReviews = ((_a = creator.userId) === null || _a === void 0 ? void 0 : _a._id) || creatorId;
+                const reviews = await Review_1.default.find({ creatorId: creatorIdForReviews });
+                if (reviews.length > 0) {
+                    actualReviewCount = reviews.length;
+                    const totalRating = reviews.reduce((sum, review) => sum + (review.rating || 0), 0);
+                    actualRating = totalRating / actualReviewCount;
+                }
+            }
+            catch (error) {
+                console.error('Error calculating ratings for creator:', creatorId, error);
+            }
             // Return the processed creator data
             return {
                 _id: creatorId,
                 userId: creator.userId,
                 username, // Add top-level username for easier access
                 fullName: creator.userId && creator.userId.fullName ? creator.userId.fullName : 'Creator',
-                title: ((_a = creator.professionalInfo) === null || _a === void 0 ? void 0 : _a.title) || '', // Add title field
+                title: ((_b = creator.professionalInfo) === null || _b === void 0 ? void 0 : _b.title) || '', // Add title field
                 personalInfo: creator.personalInfo || {},
                 professionalInfo: creator.professionalInfo || {},
                 descriptionFaq: creator.descriptionFaq || {},
@@ -1867,13 +1893,13 @@ exports.getPublishedCreators = (0, express_async_handler_1.default)(async (req, 
                 gallery: creator.gallery || {},
                 portfolio: creator.portfolio || [],
                 metrics: creator.metrics || {},
-                rating: creator.metrics && creator.metrics.ratings ?
-                    creator.metrics.ratings.average || 0 : 0,
-                reviews: creator.metrics && creator.metrics.ratings ?
-                    creator.metrics.ratings.count || 0 : 0,
+                rating: actualRating > 0 ? parseFloat(actualRating.toFixed(1)) :
+                    (creator.metrics && creator.metrics.ratings ? creator.metrics.ratings.average || 0 : 0),
+                reviewCount: actualReviewCount > 0 ? actualReviewCount :
+                    (creator.metrics && creator.metrics.ratings ? creator.metrics.ratings.count || 0 : 0),
                 isActive: creator.isActive !== false, // Add isActive for frontend filtering
             };
-        });
+        }));
         // Return paginated results with metadata
         res.status(200).json({
             success: true,
@@ -2608,3 +2634,99 @@ function applyDiversityAlgorithm(creators, limit) {
     }
     return diverseCreators.slice(0, limit);
 }
+/**
+ * @desc    Get all available tags from published creators
+ * @route   GET /api/creators/tags
+ * @access  Public
+ */
+exports.getAvailableTags = (0, express_async_handler_1.default)(async (req, res) => {
+    try {
+        const tags = await CreatorProfile_1.CreatorProfile.aggregate([
+            {
+                $match: {
+                    status: 'published',
+                    'publishInfo.isPublished': true,
+                    isActive: { $ne: false }
+                }
+            },
+            {
+                $unwind: '$professionalInfo.tags'
+            },
+            {
+                $group: {
+                    _id: '$professionalInfo.tags',
+                    count: { $sum: 1 }
+                }
+            },
+            {
+                $sort: { count: -1 }
+            },
+            {
+                $project: {
+                    tag: '$_id',
+                    count: 1,
+                    _id: 0
+                }
+            }
+        ]);
+        res.json({
+            success: true,
+            data: tags.map(item => ({ tag: item.tag, count: item.count }))
+        });
+    }
+    catch (error) {
+        console.error('Error fetching available tags:', error);
+        res.status(500).json({
+            success: false,
+            message: 'Failed to fetch available tags'
+        });
+    }
+});
+/**
+ * @desc    Get all available content types from published creators
+ * @route   GET /api/creators/content-types
+ * @access  Public
+ */
+exports.getAvailableContentTypes = (0, express_async_handler_1.default)(async (req, res) => {
+    try {
+        const contentTypes = await CreatorProfile_1.CreatorProfile.aggregate([
+            {
+                $match: {
+                    status: 'published',
+                    'publishInfo.isPublished': true,
+                    isActive: { $ne: false }
+                }
+            },
+            {
+                $unwind: '$professionalInfo.contentTypes'
+            },
+            {
+                $group: {
+                    _id: '$professionalInfo.contentTypes',
+                    count: { $sum: 1 }
+                }
+            },
+            {
+                $sort: { count: -1 }
+            },
+            {
+                $project: {
+                    contentType: '$_id',
+                    count: 1,
+                    _id: 0
+                }
+            }
+        ]);
+        res.json({
+            success: true,
+            data: contentTypes.map(item => ({ contentType: item.contentType, count: item.count }))
+        });
+    }
+    catch (error) {
+        console.error('Error fetching available content types:', error);
+        res.status(500).json({
+            success: false,
+            message: 'Failed to fetch available content types'
+        });
+    }
+});

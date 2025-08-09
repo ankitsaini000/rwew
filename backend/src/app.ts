@@ -7,6 +7,7 @@ import creatorVerificationRoutes from './routes/creatorVerificationRoutes';
 import brandPreferenceRoutes from './routes/brandPreferenceRoutes';
 import ollamaRoutes from './routes/ollamaRoutes';
 import creatorBankAccountRoutes from './routes/creatorBankAccountRoutes';
+import searchHistoryRoutes from './routes/searchHistoryRoutes';
 
 const app = express();
 
@@ -27,5 +28,6 @@ app.use('/api/creator-verification', creatorVerificationRoutes);
 app.use('/api/brand-preferences', brandPreferenceRoutes);
 app.use('/api/ollama', ollamaRoutes);
 app.use('/api/creator-bank-accounts', creatorBankAccountRoutes);
+app.use('/api/search-history', searchHistoryRoutes);
 
 export default app; 

@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
-import { Instagram, Youtube, Twitter, Facebook, Linkedin, Globe, Plus, Trash2, RefreshCw, Link as LinkIcon } from 'lucide-react';
+import { Instagram, Youtube, Twitter, Facebook, Linkedin, Globe, Plus, Trash2, RefreshCw, Link as LinkIcon, ChevronDown } from 'lucide-react';
 import { toast } from 'react-hot-toast';
 import { Button } from '../ui/button';
 import { OnboardingProgressBar } from '../OnboardingProgressBar';
@@ -241,6 +241,20 @@ export const CreatorSocialMedia = () => {
     linkedin: '',
     other: {} as Record<string, string>
   });
+  
+  // LinkedIn follower range options
+  const linkedinFollowerRanges = [
+    { label: 'Less than 500', value: '0-500', displayValue: 500 },
+    { label: '500 - 1,000', value: '500-1000', displayValue: 1000 },
+    { label: '1,000 - 5,000', value: '1000-5000', displayValue: 5000 },
+    { label: '5,000 - 10,000', value: '5000-10000', displayValue: 10000 },
+    { label: '10,000 - 50,000', value: '10000-50000', displayValue: 50000 },
+    { label: '50,000 - 100,000', value: '50000-100000', displayValue: 100000 },
+    { label: 'More than 100,000', value: '100000+', displayValue: 100000 }
+  ];
+  
+  // Selected LinkedIn follower range
+  const [selectedLinkedinRange, setSelectedLinkedinRange] = useState('');
   const [isConnectingInstagram, setIsConnectingInstagram] = useState(false);
   const [instagramConnected, setInstagramConnected] = useState(false);
   const [isConnectingYouTube, setIsConnectingYouTube] = useState(false);
@@ -410,14 +424,13 @@ export const CreatorSocialMedia = () => {
           // Parse the Twitter data from URL
           const data = JSON.parse(decodeURIComponent(twitterDataParam));
           
-          // Debug log to see what is received from Twitter
-          console.log('[Twitter Connect Callback] Received data:', data);
+          // Twitter data received from callback
           
           // Set the Twitter username if present in the data object
           if (data && typeof data.username === 'string') {
             setFormData(prev => {
               const updated = { ...prev, twitter: data.username };
-              console.log('[DEBUG] setFormData from Twitter callback:', updated);
+              // Update form data from Twitter callback
               return updated;
             });
           }
@@ -525,7 +538,7 @@ export const CreatorSocialMedia = () => {
               igUsername = parts[parts.length - 1] || igUsername;
             }
             const updated = { ...prev, ...userData.socialMedia, instagram: igUsername };
-            console.log('[DEBUG] setFormData from localStorage:', updated);
+            // Update form data from localStorage
             return updated;
           });
           if (userData.socialMedia.followerCounts) {
@@ -567,7 +580,7 @@ export const CreatorSocialMedia = () => {
         }
 
         const data = await response.json();
-        console.log('Fetched profile data:', data); // Debug log
+        // Profile data fetched
 
         if (data.success && data.data) {
           const profile = data.data;
@@ -601,7 +614,7 @@ export const CreatorSocialMedia = () => {
               femalePercentage: socialMedia.audienceDemographics?.genderBreakdown?.female || 0,
               otherPercentage: socialMedia.audienceDemographics?.genderBreakdown?.other || 0
             };
-            console.log('[DEBUG] setFormData from backend fetch:', newFormData);
+            // Update form data from backend fetch
             setFormData(prev => ({
               ...newFormData,
               instagram: prev.instagram || newFormData.instagram
@@ -634,6 +647,21 @@ export const CreatorSocialMedia = () => {
       ...prev,
       [platform]: numericValue
     }));
+  };
+  
+  // Handle LinkedIn follower range selection
+  const handleLinkedinRangeSelect = (rangeValue: string) => {
+    setSelectedLinkedinRange(rangeValue);
+    
+    // Extract the display value from the selected range
+    const selectedRange = linkedinFollowerRanges.find(range => range.value === rangeValue);
+    if (selectedRange) {
+      // Update the follower count with the display value
+      setFollowerCounts(prev => ({
+        ...prev,
+        linkedin: selectedRange.displayValue.toString()
+      }));
+    }
   };
   
   const handleAddOtherPlatform = () => {
@@ -732,7 +760,7 @@ export const CreatorSocialMedia = () => {
     // Check if at least one social media profile is filled
     const hasAnyProfile = !!(formData.instagram || formData.twitter || formData.facebook || formData.linkedin || formData.youtube);
     const completionStatus = hasAnyProfile;
-    console.log('SocialMedia completionStatus:', completionStatus);
+    // Set social media completion status
 
     // Prepare update data (do not overwrite other completionStatus fields)
     let prevCompletion = {};
@@ -808,7 +836,7 @@ export const CreatorSocialMedia = () => {
       onboardingStep: 'pricing'
     };
 
-    console.log('Updating with data:', updateData);
+    // Prepare update data for submission
 
     try {
       const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/creators/me`, {
@@ -821,7 +849,7 @@ export const CreatorSocialMedia = () => {
       });
 
       const result = await response.json();
-      console.log('Update response:', result); // Debug log
+      // Process update response
 
       if (!response.ok) {
         throw new Error(result.message || 'Failed to update profile');
@@ -1046,13 +1074,7 @@ export const CreatorSocialMedia = () => {
                     Instagram account connected. Follower count verified from your profile.
                   </p>
                 )}
-                {process.env.NODE_ENV === 'development' && (
-                  <div className="mt-2 p-2 bg-yellow-50 border border-yellow-200 rounded text-xs text-yellow-800">
-                    <div><b>DEBUG:</b></div>
-                    <div>formData.instagram: <code>{JSON.stringify(formData.instagram)}</code></div>
-                    <div>instagramConnected: <code>{JSON.stringify(instagramConnected)}</code></div>
-                  </div>
-                )}
+                {/* Debug information removed */}
               </div>
               <div className="md:col-span-2 space-y-2">
                 <label className="block text-sm font-medium text-gray-700">
@@ -1276,17 +1298,27 @@ export const CreatorSocialMedia = () => {
               </div>
               <div className="md:col-span-2 space-y-2">
                 <label className="block text-sm font-medium text-gray-700">
-                  Connections
+                  Connections Range
                 </label>
-                <div className="flex">
-                  <input
-                    type="text"
-                    value={followerCounts.linkedin}
-                    onChange={(e) => updateFollowerCount('linkedin', e.target.value)}
-                    placeholder="e.g. 500"
-                    className="w-full px-4 py-3 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-200 focus:border-blue-500 transition-all"
-                  />
-                  <span className="ml-2 flex items-center text-gray-500 text-sm">
+                <div className="flex flex-col">
+                  <div className="relative">
+                    <select
+                      value={selectedLinkedinRange}
+                      onChange={(e) => handleLinkedinRangeSelect(e.target.value)}
+                      className="w-full px-4 py-3 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-200 focus:border-blue-500 transition-all appearance-none"
+                    >
+                      <option value="">Select a range</option>
+                      {linkedinFollowerRanges.map((range) => (
+                        <option key={range.value} value={range.value}>
+                          {range.label}
+                        </option>
+                      ))}
+                    </select>
+                    <div className="pointer-events-none absolute inset-y-0 right-0 flex items-center px-2 text-gray-700">
+                      <ChevronDown className="h-4 w-4" />
+                    </div>
+                  </div>
+                  <span className="mt-1 text-gray-500 text-sm">
                     {parseInt(followerCounts.linkedin).toLocaleString()} connections
                   </span>
                 </div>
@@ -1410,4 +1442,4 @@ export const CreatorSocialMedia = () => {
       </div>
     </div>
   );
-}; 
+};

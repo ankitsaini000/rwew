@@ -1968,7 +1968,9 @@ export const getPublishedCreators = asyncHandler(async (req: Request, res: Respo
       priceMax, 
       followersMin, 
       followersMax, 
-      sortBy 
+      sortBy,
+      tags,
+      contentTypes
     } = req.query;
     
     // Parse pagination parameters
@@ -1985,7 +1987,7 @@ export const getPublishedCreators = asyncHandler(async (req: Request, res: Respo
     
     // Add search query if provided
     if (searchQuery) {
-      // Create a text search across multiple fields
+      // Create a text search across multiple fields including tags and content types
       const searchRegex = new RegExp(searchQuery as string, 'i');
       filter.$or = [
         { 'personalInfo.username': searchRegex },
@@ -1994,8 +1996,14 @@ export const getPublishedCreators = asyncHandler(async (req: Request, res: Respo
         { 'professionalInfo.title': searchRegex },
         { 'professionalInfo.categories': searchRegex },
         { 'professionalInfo.subcategories': searchRegex },
+        { 'professionalInfo.tags': searchRegex },
+        { 'professionalInfo.contentTypes': searchRegex },
         { 'personalInfo.location': searchRegex },
-        { 'descriptionFaq.briefDescription': searchRegex }
+        { 'descriptionFaq.briefDescription': searchRegex },
+        { 'descriptionFaq.specialties': searchRegex },
+        { 'galleryPortfolio.images.tags': searchRegex },
+        { 'galleryPortfolio.videos.tags': searchRegex },
+        { 'portfolio.tags': searchRegex }
       ];
     }
     
@@ -2009,6 +2017,18 @@ export const getPublishedCreators = asyncHandler(async (req: Request, res: Respo
       // Social media platform checks - match if they have that platform set up
       const platformKey = (platform as string).toLowerCase();
       filter[`socialMedia.socialProfiles.${platformKey}.url`] = { $exists: true, $ne: '' };
+    }
+    
+    // Add tags filter if provided
+    if (tags) {
+      const tagsArray = Array.isArray(tags) ? tags : [tags];
+      filter['professionalInfo.tags'] = { $in: tagsArray };
+    }
+    
+    // Add content types filter if provided
+    if (contentTypes) {
+      const contentTypesArray = Array.isArray(contentTypes) ? contentTypes : [contentTypes];
+      filter['professionalInfo.contentTypes'] = { $in: contentTypesArray };
     }
     
     // Add price range filters if provided
@@ -2052,10 +2072,6 @@ export const getPublishedCreators = asyncHandler(async (req: Request, res: Respo
         case 'followers':
           sortOptions = { 'socialMedia.totalReach': -1 };
           break;
-        case 'engagement':
-          // This is complex to sort by in MongoDB, default to relevance
-          sortOptions = { 'metrics.profileViews': -1 };
-          break;
         case 'relevance':
         default:
           // For relevance, use a complex sort that considers multiple factors
@@ -2081,9 +2097,7 @@ export const getPublishedCreators = asyncHandler(async (req: Request, res: Respo
     console.log(`Returning ${creators.length} creators for page ${page}`);
     
     // Process creators to ensure they have all required fields
-    const processedCreators = creators.map((creator: any) => {
-      // Process each creator - extract username, ensure all required data exists
-      // This is similar to the frontend mapping function but happens on the server
+    const processedCreators = await Promise.all(creators.map(async (creator: any) => {
       const creatorId = creator._id ? creator._id.toString() : '';
       
       // Extract username from userId if it exists
@@ -2103,6 +2117,21 @@ export const getPublishedCreators = asyncHandler(async (req: Request, res: Respo
       if (!username) {
         username = `user_${creatorId.substring(0, 8)}`;
       }
+
+      // Calculate actual ratings and reviews from Review model
+      let actualRating = 0;
+      let actualReviewCount = 0;
+      try {
+        const creatorIdForReviews = creator.userId?._id || creatorId;
+        const reviews = await Review.find({ creatorId: creatorIdForReviews });
+        if (reviews.length > 0) {
+          actualReviewCount = reviews.length;
+          const totalRating = reviews.reduce((sum: number, review: any) => sum + (review.rating || 0), 0);
+          actualRating = totalRating / actualReviewCount;
+        }
+      } catch (error) {
+        console.error('Error calculating ratings for creator:', creatorId, error);
+      }
       
       // Return the processed creator data
       return {
@@ -2119,13 +2148,13 @@ export const getPublishedCreators = asyncHandler(async (req: Request, res: Respo
         gallery: creator.gallery || {},
         portfolio: creator.portfolio || [],
         metrics: creator.metrics || {},
-        rating: creator.metrics && creator.metrics.ratings ? 
-                creator.metrics.ratings.average || 0 : 0,
-        reviews: creator.metrics && creator.metrics.ratings ? 
-                creator.metrics.ratings.count || 0 : 0,
+        rating: actualRating > 0 ? parseFloat(actualRating.toFixed(1)) : 
+                (creator.metrics && creator.metrics.ratings ? creator.metrics.ratings.average || 0 : 0),
+        reviewCount: actualReviewCount > 0 ? actualReviewCount : 
+                    (creator.metrics && creator.metrics.ratings ? creator.metrics.ratings.count || 0 : 0),
         isActive: creator.isActive !== false, // Add isActive for frontend filtering
       };
-    });
+    }));
     
     // Return paginated results with metadata
     res.status(200).json({
@@ -3031,4 +3060,102 @@ function applyDiversityAlgorithm(creators: any[], limit: number): any[] {
 
   return diverseCreators.slice(0, limit);
 }
+
+/**
+ * @desc    Get all available tags from published creators
+ * @route   GET /api/creators/tags
+ * @access  Public
+ */
+export const getAvailableTags = asyncHandler(async (req: Request, res: Response) => {
+  try {
+    const tags = await CreatorProfile.aggregate([
+      {
+        $match: {
+          status: 'published',
+          'publishInfo.isPublished': true,
+          isActive: { $ne: false }
+        }
+      },
+      {
+        $unwind: '$professionalInfo.tags'
+      },
+      {
+        $group: {
+          _id: '$professionalInfo.tags',
+          count: { $sum: 1 }
+        }
+      },
+      {
+        $sort: { count: -1 }
+      },
+      {
+        $project: {
+          tag: '$_id',
+          count: 1,
+          _id: 0
+        }
+      }
+    ]);
+
+    res.json({
+      success: true,
+      data: tags.map(item => ({ tag: item.tag, count: item.count }))
+    });
+  } catch (error) {
+    console.error('Error fetching available tags:', error);
+    res.status(500).json({
+      success: false,
+      message: 'Failed to fetch available tags'
+    });
+  }
+});
+
+/**
+ * @desc    Get all available content types from published creators
+ * @route   GET /api/creators/content-types
+ * @access  Public
+ */
+export const getAvailableContentTypes = asyncHandler(async (req: Request, res: Response) => {
+  try {
+    const contentTypes = await CreatorProfile.aggregate([
+      {
+        $match: {
+          status: 'published',
+          'publishInfo.isPublished': true,
+          isActive: { $ne: false }
+        }
+      },
+      {
+        $unwind: '$professionalInfo.contentTypes'
+      },
+      {
+        $group: {
+          _id: '$professionalInfo.contentTypes',
+          count: { $sum: 1 }
+        }
+      },
+      {
+        $sort: { count: -1 }
+      },
+      {
+        $project: {
+          contentType: '$_id',
+          count: 1,
+          _id: 0
+        }
+      }
+    ]);
+
+    res.json({
+      success: true,
+      data: contentTypes.map(item => ({ contentType: item.contentType, count: item.count }))
+    });
+  } catch (error) {
+    console.error('Error fetching available content types:', error);
+    res.status(500).json({
+      success: false,
+      message: 'Failed to fetch available content types'
+    });
+  }
+});
   

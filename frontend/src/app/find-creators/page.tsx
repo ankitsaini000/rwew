@@ -4,12 +4,12 @@ import { useState, useEffect, useRef, useCallback } from 'react';
 import { DashboardLayout } from '../../components/layout/DashboardLayout';
 import { 
   Search, Filter, Star, Users, MapPin, Sparkles, 
-  CheckCircle, Heart, ChevronDown, Globe, TrendingUp,
+  CheckCircle, Heart, ChevronDown, Globe,
   MessageSquare, Instagram, Youtube, Twitter
 } from 'lucide-react';
 import Link from 'next/link';
 import Image from 'next/image';
-import { getFilteredCreators } from '@/services/api';
+import { getFilteredCreators, getCategories, getCreatorReviewsDirect, getAvailableTags, getAvailableContentTypes, saveSearchHistory } from '@/services/api';
 
 // Creator interface to define the expected shape of creator data
 interface Creator {
@@ -18,6 +18,7 @@ interface Creator {
   username: string;
   avatar: string;
   category: string;
+  categories?: string[]; // Added categories array property
   subCategory?: string;
   location: string | {
     city?: string;
@@ -40,164 +41,26 @@ interface Creator {
     youtube?: number;
     twitter?: number;
   };
-  engagement: string;
   tags: string[];
   isVerified: boolean;
   platforms: string[];
   featuredWork?: string[];
   completedProjects: number;
-}
+  // Added properties for reviews
+  reviews?: Array<{
+    id?: string;
+    text: string;
+    rating?: number;
+    createdAt?: string;
+    brandId?: any;
+    creatorId?: string;
+    orderId?: any;
+  }>;
+  reviewCount?: number;
+    }
 
-// Mock data for creators
-const mockCreators: Creator[] = [
-  {
-    id: 1,
-    name: "Sophia Martinez",
-    username: "@sophiastyle",
-    avatar: "/avatars/sophia.jpg",
-    category: "Fashion & Lifestyle",
-    subCategory: "Fashion",
-    location: "Mumbai, India",
-    bio: "Fashion influencer with a focus on sustainable and ethical clothing brands",
-    pricing: {
-      basic: 15000,
-      standard: 30000,
-      premium: 50000
-    },
-    rating: 4.9,
-    followers: {
-      total: 350000,
-      instagram: 250000,
-      tiktok: 100000
-    },
-    engagement: "5.2%",
-    tags: ["Fashion", "Sustainable", "Lifestyle", "Beauty"],
-    isVerified: true,
-    platforms: ["Instagram", "TikTok"],
-    featuredWork: ["/work/sophia1.jpg", "/work/sophia2.jpg"],
-    completedProjects: 28
-  },
-  {
-    id: 2,
-    name: "Alex Johnson",
-    username: "@alextech",
-    avatar: "/avatars/alex.jpg",
-    category: "Tech & Gaming",
-    subCategory: "Tech Reviews",
-    location: "Bangalore, India",
-    bio: "Tech reviewer with a focus on smartphones, laptops and gaming peripherals",
-    pricing: {
-      basic: 20000,
-      standard: 40000,
-      premium: 70000
-    },
-    rating: 4.7,
-    followers: {
-      total: 420000,
-      youtube: 300000,
-      twitter: 120000
-    },
-    engagement: "6.8%",
-    tags: ["Technology", "Gaming", "Reviews", "Gadgets"],
-    isVerified: true,
-    platforms: ["YouTube", "Twitter"],
-    completedProjects: 15
-  },
-  {
-    id: 3,
-    name: "Emma Williams",
-    username: "@emmafoodie",
-    avatar: "/avatars/emma.jpg",
-    category: "Food & Cooking",
-    subCategory: "Recipe Creator",
-    location: "Delhi, India",
-    bio: "Food blogger sharing authentic Indian recipes with a modern twist",
-    pricing: {
-      basic: 10000,
-      standard: 25000,
-      premium: 45000
-    },
-    rating: 4.8,
-    followers: {
-      total: 280000,
-      instagram: 180000,
-      tiktok: 100000
-    },
-    engagement: "4.9%",
-    tags: ["Food", "Cooking", "Recipes", "Healthy"],
-    isVerified: true,
-    platforms: ["Instagram", "TikTok"],
-    completedProjects: 22
-  },
-  {
-    id: 4,
-    name: "Ryan Cooper",
-    username: "@ryanfitness",
-    avatar: "/avatars/ryan.jpg",
-    category: "Fitness & Health",
-    subCategory: "Personal Trainer",
-    location: "Pune, India",
-    bio: "Certified fitness trainer sharing workout routines and nutrition advice",
-    pricing: {
-      basic: 12000,
-      standard: 28000,
-      premium: 48000
-    },
-    rating: 4.6,
-    followers: {
-      total: 200000,
-      instagram: 150000,
-      youtube: 50000
-    },
-    engagement: "3.8%",
-    tags: ["Fitness", "Health", "Workout", "Nutrition"],
-    isVerified: false,
-    platforms: ["Instagram", "YouTube"],
-    completedProjects: 12
-  },
-  {
-    id: 5,
-    name: "Priya Sharma",
-    username: "@priyatravel",
-    avatar: "/avatars/priya.jpg",
-    category: "Travel",
-    subCategory: "Adventure Travel",
-    location: "Jaipur, India",
-    bio: "Travel enthusiast showcasing the hidden gems of India and beyond",
-    pricing: {
-      basic: 18000,
-      standard: 35000,
-      premium: 60000
-    },
-    rating: 4.5,
-    followers: {
-      total: 310000,
-      instagram: 210000,
-      youtube: 100000
-    },
-    engagement: "4.2%",
-    tags: ["Travel", "Adventure", "Photography", "Culture"],
-    isVerified: true,
-    platforms: ["Instagram", "YouTube"],
-    completedProjects: 19
-  }
-];
 
-// Categories for filtering
-const categories = [
-  "All Categories",
-  "Fashion & Lifestyle",
-  "Tech & Gaming",
-  "Food & Cooking",
-  "Fitness & Health",
-  "Travel",
-  "Beauty",
-  "Education",
-  "Entertainment",
-  "Business"
-];
-
-// Platforms for filtering
+// Define platforms for filtering
 const platforms = [
   "All Platforms",
   "Instagram",
@@ -222,6 +85,16 @@ const TikTokIcon = ({ className = "w-4 h-4" }: { className?: string }) => (
 );
 
 export default function FindCreatorsPage() {
+  // Categories state for filtering
+  const [categories, setCategories] = useState<string[]>(["All Categories"]);
+  const [categoriesLoading, setCategoriesLoading] = useState(true);
+  
+  // Tags and Content Types state
+  const [availableTags, setAvailableTags] = useState<Array<{tag: string, count: number}>>([]);
+  const [availableContentTypes, setAvailableContentTypes] = useState<Array<{contentType: string, count: number}>>([]);
+  const [selectedTags, setSelectedTags] = useState<string[]>([]);
+  const [selectedContentTypes, setSelectedContentTypes] = useState<string[]>([]);
+  
   const [creators, setCreators] = useState<Creator[]>([]);
   const [searchQuery, setSearchQuery] = useState("");
   const [debouncedQuery, setDebouncedQuery] = useState("");
@@ -257,6 +130,45 @@ export default function FindCreatorsPage() {
     [loading, hasMore]
   );
 
+  // Fetch categories, tags, and content types from backend
+  useEffect(() => {
+    const fetchFilterData = async () => {
+      setCategoriesLoading(true);
+      try {
+        const [fetchedCategories, fetchedTags, fetchedContentTypes] = await Promise.all([
+          getCategories(),
+          getAvailableTags(),
+          getAvailableContentTypes()
+        ]);
+        
+        // Add "All Categories" as the first option
+        const formattedCategories = ["All Categories", ...fetchedCategories.map((cat: any) => cat.name)];
+        setCategories(formattedCategories);
+        setAvailableTags(fetchedTags);
+        setAvailableContentTypes(fetchedContentTypes);
+      } catch (error) {
+        console.error('Error fetching filter data:', error);
+        // Fallback to default categories if fetch fails
+        setCategories([
+          "All Categories",
+          "Fashion & Lifestyle",
+          "Tech & Gaming",
+          "Food & Cooking",
+          "Fitness & Health",
+          "Travel",
+          "Beauty",
+          "Education",
+          "Entertainment",
+          "Business"
+        ]);
+      } finally {
+        setCategoriesLoading(false);
+      }
+    };
+    
+    fetchFilterData();
+  }, []);
+
   // Debounce search input
   useEffect(() => {
     const handler = setTimeout(() => setDebouncedQuery(searchQuery), 300);
@@ -267,7 +179,7 @@ export default function FindCreatorsPage() {
   useEffect(() => {
     setPage(1);
     fetchCreators();
-  }, [debouncedQuery, selectedCategory, selectedPlatform, priceRange, followerRange, sortOption]);
+  }, [debouncedQuery, selectedCategory, selectedPlatform, priceRange, followerRange, sortOption, selectedTags, selectedContentTypes]);
 
   // Fetch more creators on page change (for infinite scroll)
   useEffect(() => {
@@ -285,8 +197,7 @@ export default function FindCreatorsPage() {
         'price-low': 'price-low',
         'price-high': 'price-high',
         'rating': 'rating',
-        'followers': 'followers',
-        'engagement': 'engagement'
+        'followers': 'followers'
       };
       
       // Prepare filters for API
@@ -300,17 +211,85 @@ export default function FindCreatorsPage() {
         followersMax: followerRange[1],
         sortBy: sortByMap[sortOption] || 'relevance',
         page,
-        limit: 9 // Show 9 creators per page (3x3 grid)
+        limit: 9, // Show 9 creators per page (3x3 grid)
+        tags: selectedTags,
+        contentTypes: selectedContentTypes
       };
       
-      const result = await getFilteredCreators(filters);
+      const result = await getFilteredCreators({
+        search: debouncedQuery,
+        category: selectedCategory,
+        platform: selectedPlatform,
+        priceMin: priceRange[0],
+        priceMax: priceRange[1],
+        followersMin: followerRange[0],
+        followersMax: followerRange[1],
+        sortBy: sortByMap[sortOption] || 'relevance',
+        page,
+        limit: 9,
+        tags: selectedTags,
+        contentTypes: selectedContentTypes
+      });
       console.log('Fetched creators:', result.creators); // Debug log
+      
+      // Save search to backend if there's a search query or filters
+      if (debouncedQuery || selectedCategory !== 'All Categories' || selectedPlatform !== 'All Platforms' || selectedTags.length > 0 || selectedContentTypes.length > 0) {
+        try {
+          const searchQuery = debouncedQuery || `${selectedCategory} ${selectedPlatform} ${selectedTags.join(' ')} ${selectedContentTypes.join(' ')}`.trim();
+          if (searchQuery) {
+            await saveSearchHistory({
+              query: searchQuery,
+              searchType: debouncedQuery ? 'text' : 'category',
+              filters: {
+                category: selectedCategory !== 'All Categories' ? selectedCategory : undefined,
+                platform: selectedPlatform !== 'All Platforms' ? selectedPlatform : undefined,
+                tags: selectedTags.length > 0 ? selectedTags : undefined,
+                contentTypes: selectedContentTypes.length > 0 ? selectedContentTypes : undefined,
+                priceMin: priceRange[0],
+                priceMax: priceRange[1],
+                followersMin: followerRange[0],
+                followersMax: followerRange[1]
+              },
+              resultsCount: result.creators.length
+            });
+          }
+        } catch (error) {
+          console.error('Error saving search history:', error);
+          // Don't break the main functionality if search history fails
+        }
+      }
+      
+      // Enrich creators with reviews and ratings
+      const enrichedCreators = await Promise.all(
+        result.creators
+          .filter((c: any) => c.isActive !== false)
+          .map(async (creator: any) => {
+            try {
+              const reviewsData = await getCreatorReviewsDirect(creator.id);
+              console.log('Reviews data for creator', creator.id, ':', reviewsData);
+              return {
+                ...creator,
+                reviews: reviewsData?.reviews || [],
+                reviewCount: reviewsData?.totalReviews || 0,
+                rating: typeof reviewsData?.averageRating === 'number' ? reviewsData.averageRating : 0
+              };
+            } catch (err) {
+              console.error('Error fetching reviews for creator', creator.id, err);
+              return {
+                ...creator,
+                reviews: [],
+                reviewCount: 0,
+                rating: 0
+              };
+            }
+          })
+      );
       
       // First page replaces all creators, subsequent pages append
       if (page === 1) {
-        setCreators(result.creators.filter((c: any) => c.isActive !== false));
+        setCreators(enrichedCreators);
       } else {
-        setCreators(prev => [...prev, ...result.creators.filter((c: any) => c.isActive !== false)]);
+        setCreators(prev => [...prev, ...enrichedCreators]);
       }
       
       // Update pagination info
@@ -423,12 +402,17 @@ export default function FindCreatorsPage() {
                       value={selectedCategory}
                       onChange={(e) => setSelectedCategory(e.target.value)}
                       className="w-full px-4 py-2 rounded-lg bg-white/10 border border-white/20 text-white"
+                      disabled={categoriesLoading}
                     >
-                      {categories.map((category) => (
-                        <option key={category} value={category}>
-                          {category}
-                        </option>
-                      ))}
+                      {categoriesLoading ? (
+                        <option>Loading categories...</option>
+                      ) : (
+                        categories.map((category) => (
+                          <option key={category} value={category}>
+                            {category}
+                          </option>
+                        ))
+                      )}
                     </select>
                   </div>
                   <div>
@@ -461,8 +445,63 @@ export default function FindCreatorsPage() {
                       <option value="price-high">Price: High to Low</option>
                       <option value="rating">Highest Rated</option>
                       <option value="followers">Most Followers</option>
-                      <option value="engagement">Best Engagement</option>
                     </select>
+                  </div>
+                  
+                  {/* Tags Filter */}
+                  <div className="md:col-span-2">
+                    <label className="block text-white text-sm mb-2">
+                      Tags
+                    </label>
+                    <div className="flex flex-wrap gap-2 max-h-32 overflow-y-auto">
+                      {availableTags.slice(0, 10).map((tagData) => (
+                        <button
+                          key={tagData.tag}
+                          onClick={() => {
+                            setSelectedTags(prev => 
+                              prev.includes(tagData.tag) 
+                                ? prev.filter(t => t !== tagData.tag)
+                                : [...prev, tagData.tag]
+                            );
+                          }}
+                          className={`px-3 py-1 rounded-full text-xs font-medium transition-colors ${
+                            selectedTags.includes(tagData.tag)
+                              ? 'bg-white text-purple-600'
+                              : 'bg-white/20 text-white hover:bg-white/30'
+                          }`}
+                        >
+                          {tagData.tag} ({tagData.count})
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+                  
+                  {/* Content Types Filter */}
+                  <div className="md:col-span-2">
+                    <label className="block text-white text-sm mb-2">
+                      Content Types
+                    </label>
+                    <div className="flex flex-wrap gap-2 max-h-32 overflow-y-auto">
+                      {availableContentTypes.slice(0, 8).map((contentTypeData) => (
+                        <button
+                          key={contentTypeData.contentType}
+                          onClick={() => {
+                            setSelectedContentTypes(prev => 
+                              prev.includes(contentTypeData.contentType) 
+                                ? prev.filter(t => t !== contentTypeData.contentType)
+                                : [...prev, contentTypeData.contentType]
+                            );
+                          }}
+                          className={`px-3 py-1 rounded-full text-xs font-medium transition-colors ${
+                            selectedContentTypes.includes(contentTypeData.contentType)
+                              ? 'bg-white text-purple-600'
+                              : 'bg-white/20 text-white hover:bg-white/30'
+                          }`}
+                        >
+                          {contentTypeData.contentType} ({contentTypeData.count})
+                        </button>
+                      ))}
+                    </div>
                   </div>
                   <div>
                     <label className="block text-white text-sm mb-2">
@@ -508,19 +547,26 @@ export default function FindCreatorsPage() {
 
             {/* Quick Categories */}
             <div className="flex gap-3 mt-6 overflow-x-auto pb-2 scrollbar-hide">
-              {categories.slice(0, 6).map((category) => (
-                <button
-                  key={category}
-                  onClick={() => setSelectedCategory(category)}
-                  className={`px-4 py-2 rounded-full text-sm whitespace-nowrap transition-colors ${
-                    selectedCategory === category
-                      ? "bg-white text-purple-600"
-                      : "bg-white/10 text-white hover:bg-white/20"
-                  }`}
-                >
-                  {category}
-                </button>
-              ))}
+              {categoriesLoading ? (
+                <div className="px-4 py-2 bg-white/10 text-white rounded-full text-sm flex items-center">
+                  <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin mr-2"></div>
+                  Loading categories...
+                </div>
+              ) : (
+                categories.slice(0, 6).map((category) => (
+                  <button
+                    key={category}
+                    onClick={() => setSelectedCategory(category)}
+                    className={`px-4 py-2 rounded-full text-sm whitespace-nowrap transition-colors ${
+                      selectedCategory === category
+                        ? "bg-white text-purple-600"
+                        : "bg-white/10 text-white hover:bg-white/20"
+                    }`}
+                  >
+                    {category}
+                  </button>
+                ))
+              )}
             </div>
           </div>
         </div>
@@ -569,7 +615,11 @@ export default function FindCreatorsPage() {
                               {highlightMatch(creator.username, debouncedQuery)}
                             </p>
                             <p className="text-xs text-gray-500">
-                              {highlightMatch(creator.category, debouncedQuery)}
+                              {creator.categories && creator.categories.length > 0 
+                                ? highlightMatch(creator.categories.join(', '), debouncedQuery)
+                                : creator.category 
+                                  ? highlightMatch(creator.category, debouncedQuery)
+                                  : ''}
                             </p>
                           </div>
                         </div>
@@ -580,14 +630,18 @@ export default function FindCreatorsPage() {
                           <div className="flex items-center gap-1">
                             <Star size={16} className="text-yellow-400 fill-yellow-400" />
                             <span className="font-medium">{typeof creator.rating === 'number' ? creator.rating.toFixed(1) : '0.0'} / 5</span>
+                            {creator.reviewCount && creator.reviewCount > 0 && (
+                              <span className="text-gray-500 ml-1">({creator.reviewCount})</span>
+                            )}
                           </div>
+                          {creator.reviews && Array.isArray(creator.reviews) && creator.reviews.length > 0 && creator.reviews[0]?.text && (
+                            <div className="mt-2 text-sm text-gray-600 italic border-l-2 border-gray-200 pl-2">
+                              "{creator.reviews[0].text?.substring(0, 100)}{creator.reviews[0].text && creator.reviews[0].text.length > 100 ? '...' : ''}"
+                            </div>
+                          )}
                           <div className="flex items-center gap-1">
                             <Users size={16} className="text-gray-400" />
                             <span>{formatFollowers(creator.followers.total)}</span>
-                          </div>
-                          <div className="flex items-center gap-1">
-                            <TrendingUp size={16} className="text-green-500" />
-                            <span>{creator.engagement}</span>
                           </div>
                         </div>
 
@@ -602,7 +656,6 @@ export default function FindCreatorsPage() {
                             </span>
                           ))}
                         </div>
-
                         <div className="flex flex-wrap gap-2 mb-4">
                           {creator.tags.slice(0, 3).map((tag) => (
                             <span
@@ -691,4 +744,4 @@ export default function FindCreatorsPage() {
       </div>
     </DashboardLayout>
   );
-} 
+}

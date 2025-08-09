@@ -151,7 +151,7 @@ export default function BrandDashboardSettings() {
   };
 
   return (
-    <div className="max-w-2xl bg-white p-8 rounded-2xl shadow-sm mt-8 ml-0">
+    <div className="max-w-2xl bg-white p-8 rounded-2xl shadow-sm mt-8 mx-auto">
       <div className="flex items-center justify-between mb-8">
         <h2 className="text-2xl font-bold">Bank Accounts</h2>
         <button
@@ -355,4 +355,4 @@ export default function BrandDashboardSettings() {
       )}
     </div>
   );
-} 
+}

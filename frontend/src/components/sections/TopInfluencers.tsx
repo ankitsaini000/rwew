@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { Star } from "lucide-react";
+import { Star, ChevronLeft, ChevronRight } from "lucide-react";
 import { getCategories, getFilteredCreators } from "../../services/api";
 import CreatorCard from "../creator/CreatorCard";
 
@@ -11,6 +11,7 @@ export const TopInfluencers = () => {
   const [selectedCategory, setSelectedCategory] = useState("All");
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [creatorScroll, setCreatorScroll] = useState(0);
 
   useEffect(() => {
     const fetchCategories = async () => {
@@ -30,8 +31,22 @@ export const TopInfluencers = () => {
       setError(null);
       try {
         const res = await getFilteredCreators({ category: selectedCategory === "All" ? "" : selectedCategory, limit: 8 });
+        console.log('🔍 TopInfluencers Debug - Fetched creators:', res.creators);
+        
+        // Check if creators have categories
+        if (res.creators && res.creators.length > 0) {
+          res.creators.forEach((creator: any, index: number) => {
+            console.log(`🔍 Creator ${index + 1} categories:`, {
+              name: creator.name || creator.fullName,
+              categories: creator.categories,
+              professionalInfo: creator.professionalInfo
+            });
+          });
+        }
+        
         setCreators(res.creators || []);
       } catch (err) {
+        console.error('Error fetching creators:', err);
         setError("Failed to load creators");
         setCreators([]);
       } finally {
@@ -41,32 +56,49 @@ export const TopInfluencers = () => {
     fetchCreators();
   }, [selectedCategory]);
 
+  const scrollCreators = (direction: "left" | "right") => {
+    const container = document.getElementById("creators-container");
+    if (container) {
+      const scrollAmount = 280; // Approximate width of a card
+      const newScroll =
+        direction === "left"
+          ? creatorScroll - scrollAmount
+          : creatorScroll + scrollAmount;
+
+      container.scrollTo({
+        left: newScroll,
+        behavior: "smooth",
+      });
+      setCreatorScroll(newScroll);
+    }
+  };
+
   return (
-    <section className="py-16 bg-gray-50">
-      <div className="container mx-auto px-4">
+    <section className="py-8 md:py-16 bg-gradient-to-b from-gray-50 to-white">
+      <div className="container mx-auto px-3 md:px-4">
         {/* Title Section */}
-        <div className="flex justify-between items-center mb-8">
+        <div className="flex justify-between items-center mb-6 md:mb-8">
           <div>
-            <h2 className="text-3xl font-bold text-gray-900">Top Creators</h2>
-            <p className="text-gray-600 mt-2">
+            <h2 className="text-xl md:text-3xl font-bold text-gray-900">Top Creators</h2>
+            <p className="text-xs md:text-base text-gray-600 mt-1 md:mt-2">
               Work with talented creators from around the world
             </p>
           </div>
-          <button className="text-gray-600 hover:text-purple-600 font-medium">
+          <button className="text-sm md:text-base text-purple-600 hover:text-purple-700 font-medium transition-colors">
             View All Creators
           </button>
         </div>
 
         {/* Categories Filter */}
-        <div className="mb-8 overflow-x-auto">
-          <div className="flex gap-4 min-w-max pb-4">
+        <div className="mb-6 md:mb-8 overflow-x-auto">
+          <div className="flex gap-2 md:gap-4 min-w-max pb-3 md:pb-4 snap-x snap-mandatory hide-scrollbar">
             <button
               key="All"
               onClick={() => setSelectedCategory("All")}
-              className={`px-4 py-2 rounded-full text-sm font-medium transition-colors
+              className={`px-3 py-1.5 md:px-4 md:py-2 rounded-full text-xs md:text-sm font-medium transition-colors snap-start shadow-sm
                 ${selectedCategory === "All"
                   ? "bg-purple-600 text-white"
-                  : "bg-white text-gray-600 hover:bg-gray-50"}
+                  : "bg-white text-gray-600 hover:bg-gray-50 border border-gray-200"}
               `}
             >
               All
@@ -75,10 +107,10 @@ export const TopInfluencers = () => {
               <button
                 key={cat.name}
                 onClick={() => setSelectedCategory(cat.name)}
-                className={`px-4 py-2 rounded-full text-sm font-medium transition-colors
+                className={`px-3 py-1.5 md:px-4 md:py-2 rounded-full text-xs md:text-sm font-medium transition-colors snap-start shadow-sm
                   ${selectedCategory === cat.name
                     ? "bg-purple-600 text-white"
-                    : "bg-white text-gray-600 hover:bg-gray-50"}
+                    : "bg-white text-gray-600 hover:bg-gray-50 border border-gray-200"}
                 `}
               >
                 {cat.name}
@@ -89,42 +121,94 @@ export const TopInfluencers = () => {
 
         {/* Loading State */}
         {loading ? (
-          <div className="text-center py-12 text-gray-500">Loading creators...</div>
+          <div className="text-center py-8 md:py-12 text-gray-500">Loading creators...</div>
         ) : error ? (
-          <div className="text-center py-12 text-red-500">{error}</div>
+          <div className="text-center py-8 md:py-12 text-red-500">{error}</div>
         ) : creators.length === 0 ? (
-          <div className="text-center py-12 text-gray-400">No creators found.</div>
+          <div className="text-center py-8 md:py-12 text-gray-400">No creators found.</div>
         ) : (
-          <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4 justify-items-center">
-            {creators.map((creator) => (
-              <div key={creator.id || creator._id || creator.username} className="w-full max-w-[280px]">
-                <CreatorCard
-                  id={creator.id || creator._id || creator.username}
-                  username={creator.username || creator.personalInfo?.username || ''}
-                  fullName={creator.name || creator.fullName || creator.personalInfo?.fullName || creator.personalInfo?.name || creator.username || ''}
-                  avatar={creator.avatar || creator.personalInfo?.profileImage}
-                  categories={creator.professionalInfo?.categories || (creator.category ? [creator.category] : [])}
-                  level={creator.level || creator.professionalInfo?.title}
-                  description={creator.bio || creator.description || creator.personalInfo?.bio || creator.descriptionFaq?.briefDescription}
-                  rating={creator.rating || creator.metrics?.ratings?.average || 0}
-                  reviewCount={creator.reviewCount || creator.metrics?.ratings?.count || 0}
-                  startingPrice={typeof creator.startingPrice === 'string' || typeof creator.startingPrice === 'number'
-                    ? creator.startingPrice
-                    : (typeof creator.pricing?.basic === 'number' ? `₹${creator.pricing.basic}` : undefined)}
-                  isLiked={false}
-                  title={creator.title || creator.professionalInfo?.title}
-                  completedProjects={creator.completedProjects}
-                  socialMedia={{
-                    instagram: creator.socialMedia?.socialProfiles?.instagram?.url || '',
-                    twitter: creator.socialMedia?.socialProfiles?.twitter?.url || '',
-                    linkedin: creator.socialMedia?.socialProfiles?.linkedin?.url || '',
-                    youtube: creator.socialMedia?.socialProfiles?.youtube?.url || '',
-                    facebook: creator.socialMedia?.socialProfiles?.facebook?.url || '',
-                    tiktok: creator.socialMedia?.socialProfiles?.tiktok?.url || '',
-                  }}
-                />
-              </div>
-            ))}
+          <div className="relative">
+            {/* Mobile Navigation Controls - Only visible on small screens */}
+            <div className="sm:hidden flex justify-end gap-2 mb-3">
+              <button
+                onClick={() => scrollCreators("left")}
+                className="p-1.5 rounded-full bg-white shadow hover:bg-gray-50 text-gray-600 border border-gray-100 hover:border-purple-200 transition-colors"
+              >
+                <ChevronLeft className="h-4 w-4" />
+              </button>
+              <button
+                onClick={() => scrollCreators("right")}
+                className="p-1.5 rounded-full bg-white shadow hover:bg-gray-50 text-gray-600 border border-gray-100 hover:border-purple-200 transition-colors"
+              >
+                <ChevronRight className="h-4 w-4" />
+              </button>
+            </div>
+            
+            {/* Mobile Horizontal Scroll - Only on small screens */}
+            <div 
+              id="creators-container"
+              className="sm:hidden flex overflow-x-auto gap-4 pb-6 hide-scrollbar snap-x snap-mandatory touch-pan-x touch-scroll"
+            >
+              {creators.map((creator) => (
+                <div 
+                  key={creator.id || creator._id || creator.username} 
+                  className="flex-shrink-0 w-[280px] snap-start"
+                >
+                  <CreatorCard
+                    id={creator.id || creator._id || creator.username}
+                    username={creator.username || creator.personalInfo?.username || ''}
+                    fullName={creator.name || creator.fullName || creator.personalInfo?.fullName || creator.personalInfo?.name || creator.username || ''}
+                    avatar={creator.avatar || creator.personalInfo?.profileImage}
+                    categories={creator.categories || []}
+                    category={creator.category || ''}
+                    level={creator.level || creator.professionalInfo?.title}
+                    description={creator.bio || creator.description || creator.personalInfo?.bio || creator.descriptionFaq?.briefDescription}
+                    rating={creator.rating || creator.metrics?.ratings?.average || 0}
+                    reviewCount={creator.reviewCount || creator.metrics?.ratings?.count || 0}
+                    startingPrice={typeof creator.startingPrice === 'string' || typeof creator.startingPrice === 'number'
+                      ? creator.startingPrice
+                      : (typeof creator.pricing?.basic === 'number' ? `₹${creator.pricing.basic}` : undefined)}
+                    isLiked={false}
+                    title={creator.title || creator.professionalInfo?.title}
+                    completedProjects={creator.completedProjects}
+                    showCategories={true}
+                    socialMedia={creator.socialMedia}
+                  />
+                </div>
+              ))}
+            </div>
+            
+            {/* Desktop Grid - Only on larger screens */}
+            <div className="hidden sm:grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6 justify-items-center">
+              {creators.map((creator) => (
+                <div key={creator.id || creator._id || creator.username} className="w-full max-w-[280px]">
+                  <CreatorCard
+                    id={creator.id || creator._id || creator.username}
+                    username={creator.username || creator.personalInfo?.username || ''}
+                    fullName={creator.name || creator.fullName || creator.personalInfo?.fullName || creator.personalInfo?.name || creator.username || ''}
+                    avatar={creator.avatar || creator.personalInfo?.profileImage}
+                    categories={creator.categories || []}
+                    category={creator.category || ''}
+                    level={creator.level || creator.professionalInfo?.title}
+                    description={creator.bio || creator.description || creator.personalInfo?.bio || creator.descriptionFaq?.briefDescription}
+                    rating={creator.rating || creator.metrics?.ratings?.average || 0}
+                    reviewCount={creator.reviewCount || creator.metrics?.ratings?.count || 0}
+                    startingPrice={typeof creator.startingPrice === 'string' || typeof creator.startingPrice === 'number'
+                      ? creator.startingPrice
+                      : (typeof creator.pricing?.basic === 'number' ? `₹${creator.pricing.basic}` : undefined)}
+                    isLiked={false}
+                    title={creator.title || creator.professionalInfo?.title}
+                    completedProjects={creator.completedProjects}
+                    showCategories={true}
+                    socialMedia={creator.socialMedia}
+                  />
+                </div>
+              ))}
+            </div>
+            
+            {/* Gradient Overlays for Mobile Scroll - Only visible on small screens */}
+            <div className="sm:hidden absolute left-0 top-0 bottom-0 w-8 bg-gradient-to-r from-gray-50 to-transparent pointer-events-none" />
+            <div className="sm:hidden absolute right-0 top-0 bottom-0 w-8 bg-gradient-to-l from-gray-50 to-transparent pointer-events-none" />
           </div>
         )}
       </div>

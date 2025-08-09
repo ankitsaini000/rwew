@@ -303,8 +303,9 @@ const getBestCreatorMatchesForBrand = async (req, res) => {
         if (campaignId) {
             campaign = await Promotion_1.default.findById(campaignId);
         }
+        // Return empty matches if brand or preferences don't exist
         if (!brand || !preference) {
-            return res.status(404).json({ message: 'Brand or preferences not found' });
+            return res.status(200).json({ matches: [] });
         }
         // Fetch all published creators
         const creators = await CreatorProfile_1.CreatorProfile.find({ 'publishInfo.isPublished': true });

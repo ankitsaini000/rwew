@@ -27,6 +27,8 @@ import { useSocket } from '@/hooks/useSocket';
 import { useNotifications } from '../../context/NotificationContext';
 // import { checkUserRole } from '@/services/api';
 
+import { Footer } from "./Footer";
+
 export const DashboardLayout = ({ children }: { children: React.ReactNode }) => {
   const router = useRouter();
   const pathname = usePathname();
@@ -539,10 +541,18 @@ export const DashboardLayout = ({ children }: { children: React.ReactNode }) => 
           </div>
         </div>
 
-        {/* Page Content */}
-        <main className="flex-grow p-0">
-          {children}
-        </main>
+        {/* Content Wrapper - includes main content and footer */}
+        <div className="flex flex-col flex-1">
+          {/* Page Content */}
+          <main className="flex-grow p-0">
+            {children}
+          </main>
+          
+          {/* Footer - not under sidebar in desktop view */}
+          <div className="lg:ml-0">
+            <Footer />
+          </div>
+        </div>
       </div>
     </div>
   );

@@ -21,10 +21,12 @@ export const getBrandPreference = async (req: Request, res: Response) => {
     const { brandId } = req.params;
     const preference = await BrandPreference.findOne({ brandId });
     if (!preference) {
-      return res.status(404).json({ message: 'Preference not found' });
+      // Return 404 so frontend can catch this and show popup
+      return res.status(404).json({ message: 'No preferences found' });
     }
     res.json(preference);
   } catch (error) {
+    // Return 500 error so frontend can catch this and show popup
     res.status(500).json({ message: 'Error fetching brand preference', error });
   }
 };
@@ -58,4 +60,4 @@ export const deleteBrandPreference = async (req: Request, res: Response) => {
   } catch (error) {
     res.status(500).json({ message: 'Error deleting brand preference', error });
   }
-}; 
+};

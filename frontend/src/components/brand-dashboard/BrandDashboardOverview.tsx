@@ -148,6 +148,31 @@ export default function BrandDashboardOverview({
   onRejectSubmission = () => {},
   onReleasePayment = () => {},
 }: BrandDashboardOverviewProps & { setPromotionData: (data: any) => void; setPromotionStep: (step: number) => void; }) {
+  // Helper function to calculate verification status
+  const calculateVerificationStatus = () => {
+    // Count verified items
+    const verifiedItems = [
+      accountStatus.email,
+      accountStatus.phone,
+      accountStatus.pan,
+      accountStatus.gst,
+      accountStatus.idProof,
+      (accountStatus.payment.upi || accountStatus.payment.card)
+    ];
+    
+    const verifiedCount = verifiedItems.filter(Boolean).length;
+    const totalItems = verifiedItems.length;
+    const itemsLeft = totalItems - verifiedCount;
+    const progressPercentage = (verifiedCount / totalItems) * 100;
+    
+    return {
+      verifiedCount,
+      totalItems,
+      itemsLeft,
+      progressPercentage,
+      isComplete: verifiedCount === totalItems
+    };
+  };
   const router = useRouter();
   // Add state for tracking current slider position
   const [currentSlide, setCurrentSlide] = useState(0);
@@ -493,13 +518,30 @@ export default function BrandDashboardOverview({
         
         {/* Verification Status */}
         <div className="bg-white rounded-xl shadow-sm p-5 border border-gray-100">
-          <div className="flex justify-between items-center mb-4">
-            <h2 className="text-lg font-semibold text-gray-900 flex items-center">
-              <Shield className="w-5 h-5 mr-2 text-purple-600" />
-              Account Verification
-            </h2>
-            <div className="text-sm text-gray-500">3/5 Complete</div>
-          </div>
+          {/* Verification status */}
+          {(() => {
+            const { verifiedCount, totalItems, progressPercentage } = calculateVerificationStatus();
+            
+            return (
+              <>
+                <div className="flex justify-between items-center mb-2">
+                  <h2 className="text-lg font-semibold text-gray-900 flex items-center">
+                    <Shield className="w-5 h-5 mr-2 text-purple-600" />
+                    Account Verification
+                  </h2>
+                  <div className="text-sm text-gray-500">{verifiedCount}/{totalItems} Complete</div>
+                </div>
+                
+                {/* Progress bar */}
+                <div className="w-full h-2 bg-gray-200 rounded-full mb-4 overflow-hidden">
+                  <div 
+                    className="h-full bg-purple-600 rounded-full" 
+                    style={{ width: `${progressPercentage}%` }}
+                  ></div>
+                </div>
+              </>
+            );
+          })()}
           
           <div className="space-y-3">
             {/* Email */}
@@ -603,12 +645,27 @@ export default function BrandDashboardOverview({
           </div>
           
           <div className="mt-4 pt-4 border-t border-gray-200">
-            <button 
-              onClick={() => router.push('/brand-dashboard?tab=verifications')}
-              className="w-full py-2 px-4 bg-purple-600 hover:bg-purple-700 text-white rounded-lg flex items-center justify-center">
-              <Shield className="w-4 h-4 mr-2" />
-              Complete Verification
-            </button>
+            {(() => {
+              const { verifiedCount, totalItems, itemsLeft, isComplete } = calculateVerificationStatus();
+              
+              return (
+                <button 
+                  onClick={() => router.push('/brand-dashboard?tab=verifications')}
+                  className={`w-full py-2 px-4 ${isComplete ? 'bg-green-600 hover:bg-green-700' : 'bg-purple-600 hover:bg-purple-700'} text-white rounded-lg flex items-center justify-center transition-colors`}>
+                  {isComplete ? (
+                    <>
+                      <CheckCircle className="w-4 h-4 mr-2" />
+                      Verification Complete
+                    </>
+                  ) : (
+                    <>
+                      <Shield className="w-4 h-4 mr-2" />
+                      Complete Verification {itemsLeft > 0 && `(${itemsLeft} item${itemsLeft > 1 ? 's' : ''} left)`}
+                    </>
+                  )}
+                </button>
+              );
+            })()}
           </div>
         </div>
       </div>
@@ -1019,16 +1076,7 @@ export default function BrandDashboardOverview({
           Create Promotion
         </button>
       </div>
-      <div className="flex justify-end mb-2">
-        <button
-          className="inline-flex items-center px-5 py-3 bg-gradient-to-r from-purple-600 to-indigo-500 text-white font-semibold rounded-lg shadow-md hover:from-purple-700 hover:to-indigo-600 transition-all text-base"
-          onClick={() => setReviewModalOpen(true)}
-          disabled={reviewableOrders.length === 0}
-        >
-          <Star className="w-5 h-5 mr-2" />
-          Leave a Review
-        </button>
-      </div>
+      
       {reviewModalOpen && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40">
           <div className="bg-white rounded-xl p-6 max-w-md w-full shadow-lg relative">
@@ -1132,4 +1180,4 @@ export default function BrandDashboardOverview({
       </div>
     </div>
   );
-} 
+}

@@ -122,12 +122,15 @@ export const Features = ({ selectedCategory }: { selectedCategory: string }) => 
             title: creator.title || creator.professionalInfo?.title,
             completedProjects: creator.completedProjects,
             socialMedia: {
-              instagram: socialProfiles.instagram?.url || '',
-              twitter: socialProfiles.twitter?.url || '',
-              linkedin: socialProfiles.linkedin?.url || '',
-              youtube: socialProfiles.youtube?.url || '',
-              facebook: socialProfiles.facebook?.url || '',
-              tiktok: socialProfiles.tiktok?.url || '',
+              instagram: socialProfiles.instagram?.url ||  socialProfiles.instagram,
+              twitter: socialProfiles.twitter?.url || socialProfiles.twitter,
+
+              linkedin: socialProfiles.linkedin?.url || socialProfiles.linkedin,
+
+              youtube: socialProfiles.youtube?.url || socialProfiles.youtube,
+
+              facebook: socialProfiles.facebook?.url || socialProfiles.facebook,
+              // tiktok: socialProfiles.tiktok?.url || '',
             },
           };
         });

@@ -1,19 +1,8 @@
-import React, { useState, useEffect, useRef, useCallback } from 'react';
-import { getPublishedCreators, getFilteredCreators, getCreatorReviewsDirect } from '@/services/api';
+import React, { useState, useEffect } from 'react';
+import { useRouter } from 'next/navigation';
+import { getPublishedCreators, getFilteredCreators, getCreatorReviewsDirect, getCategories } from '@/services/api';
 import CreatorCard from '@/components/creator/CreatorCard';
 import { useCreatorStore } from '@/store/creatorStore';
-
-// Categories array mirroring the one in Dashboard.tsx
-const categories = [
-  { icon: "👗", name: "Fashion & Beauty", count: 2500 },
-  { icon: "✈️", name: "Travel", count: 1800 },
-  { icon: "💪", name: "Fitness & Health", count: 2100 },
-  { icon: "💻", name: "Tech", count: 1500 },
-  { icon: "🎵", name: "Music", count: 2800 },
-  { icon: "🎮", name: "Gaming", count: 2300 },
-  { icon: "🍳", name: "Food & Cooking", count: 1900 },
-  { icon: "📚", name: "Education", count: 1700 },
-];
 
 interface PublishedCreatorsProps {
   title?: string;
@@ -26,38 +15,90 @@ const PublishedCreators: React.FC<PublishedCreatorsProps> = ({
   showFilters = true,
   limit = 6
 }) => {
+  const router = useRouter();
   const [creators, setCreators] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [selectedCategory, setSelectedCategory] = useState("All");
   const { likedCreators } = useCreatorStore();
   
+  // Categories state
+  const [categories, setCategories] = useState<any[]>([]);
+  const [categoriesLoading, setCategoriesLoading] = useState(true);
+  const [categoriesError, setCategoriesError] = useState<string | null>(null);
+  
   // Pagination state
   const [page, setPage] = useState(1);
-  const [hasMore, setHasMore] = useState(true);
-  const [loadingMore, setLoadingMore] = useState(false);
-  
-  // Infinite scroll observer
-  const observer = useRef<IntersectionObserver | null>(null);
-  const lastCreatorElementRef = useCallback(
-    (node: HTMLDivElement | null) => {
-      if (loading || loadingMore) return;
-      if (observer.current) observer.current.disconnect();
-      
-      observer.current = new IntersectionObserver(entries => {
-        if (entries[0].isIntersecting && hasMore) {
-          loadMoreCreators();
-        }
-      });
-      
-      if (node) observer.current.observe(node);
-    },
-    [loading, loadingMore, hasMore]
-  );
+  const [totalPages, setTotalPages] = useState(1);
+  const [totalCreators, setTotalCreators] = useState(0);
+
+  // Fetch categories from backend
+  useEffect(() => {
+    const fetchCategories = async () => {
+      setCategoriesLoading(true);
+      setCategoriesError(null);
+      try {
+        const fetchedCategories = await getCategories();
+        // Transform categories to match the expected format
+        const formattedCategories = fetchedCategories.map((cat: any) => ({
+          icon: getCategoryIcon(cat.name), // Helper function to get icon based on category name
+          name: cat.name,
+          count: cat.count || 0
+        }));
+        setCategories(formattedCategories);
+      } catch (err) {
+        setCategoriesError("Failed to load categories");
+        // Fallback to default categories if fetch fails
+        setCategories([
+          { icon: "👗", name: "Fashion & Beauty", count: 0 },
+          { icon: "✈️", name: "Travel", count: 0 },
+          { icon: "💪", name: "Fitness & Health", count: 0 },
+          { icon: "💻", name: "Tech", count: 0 },
+          { icon: "🎵", name: "Music", count: 0 },
+          { icon: "🎮", name: "Gaming", count: 0 },
+          { icon: "🍳", name: "Food & Cooking", count: 0 },
+          { icon: "📚", name: "Education", count: 0 },
+        ]);
+      } finally {
+        setCategoriesLoading(false);
+      }
+    };
+    
+    fetchCategories();
+  }, []);
 
   useEffect(() => {
     fetchCreators();
+  }, [selectedCategory, page]);
+
+  // Reset page when category changes
+  useEffect(() => {
+    setPage(1);
   }, [selectedCategory]);
+
+  // Helper function to get icon based on category name
+  const getCategoryIcon = (categoryName: string): string => {
+    const iconMap: {[key: string]: string} = {
+      "Fashion & Beauty": "👗",
+      "Travel": "✈️",
+      "Fitness & Health": "💪",
+      "Tech": "💻",
+      "Technology": "💻",
+      "Music": "🎵",
+      "Gaming": "🎮",
+      "Food & Cooking": "🍳",
+      "Food": "🍳",
+      "Education": "📚",
+      "Lifestyle": "🌿",
+      "Beauty": "💄",
+      "Sports": "⚽",
+      "Entertainment": "🎬",
+      "Business": "💼",
+      "Art": "🎨"
+    };
+    
+    return iconMap[categoryName] || "🔍"; // Default icon if category not found
+  };
 
   // Fetch and log reviews for each creator after creators are loaded
   useEffect(() => {
@@ -77,13 +118,12 @@ const PublishedCreators: React.FC<PublishedCreatorsProps> = ({
     try {
       setLoading(true);
       setError(null); // Clear any previous errors
-      setPage(1); // Reset to page 1
       console.log('Fetching published creators...');
       
-      // Use the getFilteredCreators function with category filter
+      // Use the getFilteredCreators function with category filter and pagination
       const result = await getFilteredCreators({
         category: selectedCategory === "All" ? "" : selectedCategory,
-        page: 1,
+        page: page,
         limit
       });
       
@@ -93,7 +133,8 @@ const PublishedCreators: React.FC<PublishedCreatorsProps> = ({
         console.error('Invalid data format returned:', result);
         setCreators([]);
         setError('Failed to load creators - invalid data format');
-        setHasMore(false);
+        setTotalPages(1);
+        setTotalCreators(0);
       } else {
         // For each creator, fetch reviews and add to the creator object
         const enrichedCreators = await Promise.all(result.creators.map(async (creator) => {
@@ -119,68 +160,26 @@ const PublishedCreators: React.FC<PublishedCreatorsProps> = ({
           }
         }));
         setCreators(enrichedCreators);
-        setHasMore(result.pagination?.hasMore || false);
+        setTotalPages(result.pagination?.pages || 1);
+        setTotalCreators(result.pagination?.total || 0);
         setError(null);
       }
     } catch (err: any) {
       console.error('Error fetching published creators:', err);
       setCreators([]); // Set empty array to prevent UI issues
       setError('Failed to load creators. Please try again later.');
-      setHasMore(false);
+      setTotalPages(1);
+      setTotalCreators(0);
     } finally {
       setLoading(false);
     }
   };
   
-  const loadMoreCreators = async () => {
-    if (!hasMore || loadingMore) return;
-    
-    try {
-      setLoadingMore(true);
-      const nextPage = page + 1;
-      console.log(`Loading more creators (page ${nextPage})...`);
-      
-      // Use getFilteredCreators with pagination
-      const result = await getFilteredCreators({
-        category: selectedCategory === "All" ? "" : selectedCategory,
-        page: nextPage,
-        limit
-      });
-      
-      if (!result || !result.creators || !Array.isArray(result.creators)) {
-        console.error('Invalid data format returned for page', nextPage);
-        setHasMore(false);
-      } else {
-        // Enrich each new creator with reviews and reviewCount
-        const enrichedNewCreators = await Promise.all(result.creators.map(async (creator) => {
-          try {
-            const reviewsData = await getCreatorReviewsDirect(creator.id);
-            return {
-              ...creator,
-              reviews: reviewsData?.reviews || [],
-              reviewCount: reviewsData?.totalReviews || 0,
-              rating: typeof reviewsData?.averageRating === 'number' ? reviewsData.averageRating : 0
-            };
-          } catch (err) {
-            console.error('Error fetching reviews for creator', creator.id, err);
-            return {
-              ...creator,
-              reviews: [],
-              reviewCount: 0,
-              rating: 0
-            };
-          }
-        }));
-        setCreators(prevCreators => [...prevCreators, ...enrichedNewCreators]);
-        setHasMore(result.pagination?.hasMore || false);
-        setPage(nextPage);
-      }
-    } catch (err) {
-      console.error('Error loading more creators:', err);
-      setHasMore(false);
-    } finally {
-      setLoadingMore(false);
-    }
+  // Function to handle page change
+  const handlePageChange = (newPage: number) => {
+    if (newPage === page) return;
+    setPage(newPage);
+    window.scrollTo({ top: 0, behavior: 'smooth' });
   };
 
   const handleCategorySelect = (category: string) => {
@@ -409,7 +408,10 @@ const PublishedCreators: React.FC<PublishedCreatorsProps> = ({
         <h2 className="text-xl font-semibold text-gray-900">
           {title}
         </h2>
-        <button className="text-purple-600 text-sm font-medium">
+        <button 
+          className="text-purple-600 text-sm font-medium"
+          onClick={() => router.push('/find-creators')}
+        >
           View all
         </button>
       </div>
@@ -428,7 +430,7 @@ const PublishedCreators: React.FC<PublishedCreatorsProps> = ({
             >
               All
             </button>
-            {categories.map((category) => (
+            {!categoriesLoading && categories.map((category) => (
               <button
                 key={category.name}
                 className={`px-4 py-2 rounded-full text-sm font-medium transition-colors flex items-center gap-2 ${
@@ -442,6 +444,12 @@ const PublishedCreators: React.FC<PublishedCreatorsProps> = ({
                 <span>{category.name}</span>
               </button>
             ))}
+            {categoriesLoading && (
+              <div className="flex items-center px-4 py-2 text-gray-400">
+                <div className="animate-spin h-4 w-4 mr-2 border-2 border-gray-300 border-t-gray-600 rounded-full"></div>
+                <span>Loading categories...</span>
+              </div>
+            )}
           </div>
         </div>
       )}
@@ -494,14 +502,8 @@ const PublishedCreators: React.FC<PublishedCreatorsProps> = ({
         <>
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
             {filteredCreators.map((creator, index) => {
-              // Add ref to the last element for infinite scrolling
-              const isLastElement = index === filteredCreators.length - 1;
-              
               return (
-                <div 
-                  key={`creator-${creator._id || index}`} 
-                  ref={isLastElement ? lastCreatorElementRef : null}
-                >
+                <div key={`creator-${creator._id || index}`}>
                   <CreatorCard 
                     key={`card-${creator._id || index}`}
                     {...mapCreatorToCardProps(creator)} 
@@ -511,24 +513,67 @@ const PublishedCreators: React.FC<PublishedCreatorsProps> = ({
             })}
           </div>
           
-          {/* Loading More Indicator */}
-          {loadingMore && (
-            <div className="text-center py-4 mt-4">
-              <div className="inline-block animate-spin rounded-full h-6 w-6 border-4 border-purple-500 border-t-transparent mr-2"></div>
-              <span className="text-gray-600">Loading more creators...</span>
+          {/* Pagination Controls */}
+          {totalPages > 1 && (
+            <div className="flex justify-center mt-8">
+              <nav className="inline-flex rounded-md shadow-sm -space-x-px" aria-label="Pagination">
+                <button
+                  onClick={() => handlePageChange(page - 1)}
+                  disabled={page === 1}
+                  className={`relative inline-flex items-center px-2 py-2 rounded-l-md border border-gray-300 bg-white text-sm font-medium ${page === 1 ? 'text-gray-300 cursor-not-allowed' : 'text-gray-500 hover:bg-gray-50'}`}
+                >
+                  <span className="sr-only">Previous</span>
+                  <svg className="h-5 w-5" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" aria-hidden="true">
+                    <path fillRule="evenodd" d="M12.707 5.293a1 1 0 010 1.414L9.414 10l3.293 3.293a1 1 0 01-1.414 1.414l-4-4a1 1 0 010-1.414l4-4a1 1 0 011.414 0z" clipRule="evenodd" />
+                  </svg>
+                </button>
+                
+                {Array.from({ length: Math.min(5, totalPages) }, (_, i) => {
+                  // Show pages around current page
+                  let pageNum;
+                  if (totalPages <= 5) {
+                    pageNum = i + 1;
+                  } else if (page <= 3) {
+                    pageNum = i + 1;
+                  } else if (page >= totalPages - 2) {
+                    pageNum = totalPages - 4 + i;
+                  } else {
+                    pageNum = page - 2 + i;
+                  }
+                  
+                  return (
+                    <button
+                      key={pageNum}
+                      onClick={() => handlePageChange(pageNum)}
+                      className={`relative inline-flex items-center px-4 py-2 border text-sm font-medium ${page === pageNum ? 'z-10 bg-purple-50 border-purple-500 text-purple-600' : 'bg-white border-gray-300 text-gray-500 hover:bg-gray-50'}`}
+                    >
+                      {pageNum}
+                    </button>
+                  );
+                })}
+                
+                <button
+                  onClick={() => handlePageChange(page + 1)}
+                  disabled={page === totalPages}
+                  className={`relative inline-flex items-center px-2 py-2 rounded-r-md border border-gray-300 bg-white text-sm font-medium ${page === totalPages ? 'text-gray-300 cursor-not-allowed' : 'text-gray-500 hover:bg-gray-50'}`}
+                >
+                  <span className="sr-only">Next</span>
+                  <svg className="h-5 w-5" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" aria-hidden="true">
+                    <path fillRule="evenodd" d="M7.293 14.707a1 1 0 010-1.414L10.586 10 7.293 6.707a1 1 0 011.414-1.414l4 4a1 1 0 010 1.414l-4 4a1 1 0 01-1.414 0z" clipRule="evenodd" />
+                  </svg>
+                </button>
+              </nav>
             </div>
           )}
           
-          {/* End of Results Message */}
-          {!hasMore && filteredCreators.length > limit && (
-            <div className="text-center py-4 mt-4">
-              <p className="text-gray-500">You've reached the end of the list</p>
-            </div>
-          )}
+          {/* Results Summary */}
+          <div className="text-center text-sm text-gray-500 mt-4">
+            Showing {filteredCreators.length} of {totalCreators} creators
+          </div>
         </>
       )}
     </div>
   );
 };
 
-export default PublishedCreators; 
+export default PublishedCreators;

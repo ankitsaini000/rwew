@@ -133,22 +133,18 @@ export default function CategoryPage() {
                 username: creator.username || creator.personalInfo?.username || '',
                 fullName: creator.name || creator.fullName || creator.personalInfo?.fullName || creator.personalInfo?.name || creator.username || '',
                 avatar: creator.avatar || creator.personalInfo?.profileImage,
-                categories: creator.professionalInfo?.categories || [],
+                categories: creator.categories,
                 level: creator.level || creator.professionalInfo?.title,
                 description: creator.bio || creator.description || creator.personalInfo?.bio || creator.descriptionFaq?.briefDescription,
-                rating: creator.rating || creator.metrics?.ratings?.average || 0,
-                reviewCount: creator.reviewCount || creator.metrics?.ratings?.count || 0,
+                rating: typeof creator.rating === 'number' ? creator.rating : 
+                        (typeof creator.metrics?.ratings?.average === 'number' ? creator.metrics.ratings.average : 0),
+                reviewCount: typeof creator.reviewCount === 'number' ? creator.reviewCount :
+                           (typeof creator.reviews === 'number' ? creator.reviews :
+                           (typeof creator.metrics?.ratings?.count === 'number' ? creator.metrics.ratings.count : 0)),
                 startingPrice: creator.startingPrice || (creator.pricing?.basic ? `₹${creator.pricing.basic}` : undefined),
                 isLiked: false,
                 title: creator.title || creator.professionalInfo?.title,
-                socialMedia: {
-                  instagram: creator.socialMedia?.socialProfiles?.instagram?.url,
-                  twitter: creator.socialMedia?.socialProfiles?.twitter?.url,
-                  linkedin: creator.socialMedia?.socialProfiles?.linkedin?.url,
-                  youtube: creator.socialMedia?.socialProfiles?.youtube?.url,
-                  facebook: creator.socialMedia?.socialProfiles?.facebook?.url,
-                  tiktok: creator.socialMedia?.socialProfiles?.tiktok?.url,
-                },
+                socialMedia: creator.socialMedia,
               };
               return (
                 <CreatorCard key={cardProps.id} {...cardProps} />
@@ -175,22 +171,18 @@ export default function CategoryPage() {
                 username: creator.username || creator.personalInfo?.username || '',
                 fullName: creator.name || creator.fullName || creator.personalInfo?.fullName || creator.personalInfo?.name || creator.username || '',
                 avatar: creator.avatar || creator.personalInfo?.profileImage,
-                categories: creator.professionalInfo?.categories || [],
+                categories: creator.categories,
                 level: creator.level || creator.professionalInfo?.title,
                 description: creator.bio || creator.description || creator.personalInfo?.bio || creator.descriptionFaq?.briefDescription,
-                rating: creator.rating || creator.metrics?.ratings?.average || 0,
-                reviewCount: creator.reviewCount || creator.metrics?.ratings?.count || 0,
+                rating: typeof creator.rating === 'number' ? creator.rating : 
+                        (typeof creator.metrics?.ratings?.average === 'number' ? creator.metrics.ratings.average : 0),
+                reviewCount: typeof creator.reviewCount === 'number' ? creator.reviewCount :
+                           (typeof creator.reviews === 'number' ? creator.reviews :
+                           (typeof creator.metrics?.ratings?.count === 'number' ? creator.metrics.ratings.count : 0)),
                 startingPrice: creator.startingPrice || (creator.pricing?.basic ? `₹${creator.pricing.basic}` : undefined),
                 isLiked: false,
                 title: creator.title || creator.professionalInfo?.title,
-                socialMedia: {
-                  instagram: creator.socialMedia?.socialProfiles?.instagram?.url,
-                  twitter: creator.socialMedia?.socialProfiles?.twitter?.url,
-                  linkedin: creator.socialMedia?.socialProfiles?.linkedin?.url,
-                  youtube: creator.socialMedia?.socialProfiles?.youtube?.url,
-                  facebook: creator.socialMedia?.socialProfiles?.facebook?.url,
-                  tiktok: creator.socialMedia?.socialProfiles?.tiktok?.url,
-                },
+                socialMedia: creator.socialMedia,
               };
               return (
                 <CreatorCard key={cardProps.id} {...cardProps} />
@@ -202,4 +194,4 @@ export default function CategoryPage() {
     </div>
     </DashboardLayout>
   );
-} 
+}

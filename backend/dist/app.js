@@ -12,6 +12,7 @@ const creatorVerificationRoutes_1 = __importDefault(require("./routes/creatorVer
 const brandPreferenceRoutes_1 = __importDefault(require("./routes/brandPreferenceRoutes"));
 const ollamaRoutes_1 = __importDefault(require("./routes/ollamaRoutes"));
 const creatorBankAccountRoutes_1 = __importDefault(require("./routes/creatorBankAccountRoutes"));
+const searchHistoryRoutes_1 = __importDefault(require("./routes/searchHistoryRoutes"));
 const app = (0, express_1.default)();
 // Middleware
 app.use((0, cors_1.default)({
@@ -28,4 +29,5 @@ app.use('/api/creator-verification', creatorVerificationRoutes_1.default);
 app.use('/api/brand-preferences', brandPreferenceRoutes_1.default);
 app.use('/api/ollama', ollamaRoutes_1.default);
 app.use('/api/creator-bank-accounts', creatorBankAccountRoutes_1.default);
+app.use('/api/search-history', searchHistoryRoutes_1.default);
 exports.default = app;

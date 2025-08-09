@@ -23,12 +23,17 @@ const brandMenu = [
 ];
 
 const BottomBar = () => {
-  const { user } = useAuth();
-  const role = user?.role === 'creator' ? 'creator' : 'brand';
-  const menu = role === 'creator' ? creatorMenu : brandMenu;
-  const pathname = usePathname();
+  const { user, isAuthenticated } = useAuth();
+  const pathname = usePathname(); // Always call hooks at the top level
+  
+  // Early return after all hooks are called
+  if (!isAuthenticated) return null;
+  
   const isChatOrMessages = pathname?.startsWith('/messages') || pathname?.startsWith('/chat');
   if (isChatOrMessages) return null;
+  
+  const role = user?.role === 'creator' ? 'creator' : 'brand';
+  const menu = role === 'creator' ? creatorMenu : brandMenu;
 
   // Find center item
   const centerIdx = menu.findIndex((item) => item.center);
@@ -85,4 +90,4 @@ const BottomBar = () => {
   );
 };
 
-export default BottomBar; 
+export default BottomBar;

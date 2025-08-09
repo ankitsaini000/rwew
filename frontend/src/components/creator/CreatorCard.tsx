@@ -13,7 +13,7 @@ export interface CreatorCardProps {
   fullName: string;
   avatar?: string;
   category?: string;
-  categories?: string[]; // <-- add this
+  categories?: string[];
   level?: string;
   description?: string;
   rating?: number;
@@ -22,6 +22,8 @@ export interface CreatorCardProps {
   isLiked?: boolean;
   title?: string;
   completedProjects?: number;
+  showCategories?: boolean;
+  showSocialMedia?: boolean;
   socialMedia?: {
     instagram?: string;
     twitter?: string;
@@ -47,12 +49,20 @@ const CreatorCard: React.FC<CreatorCardProps> = ({
   isLiked,
   title,
   completedProjects,
+  showCategories = true,
   socialMedia
 }) => {
   const router = useRouter();
   const { toggleLike } = useCreatorStore();
   const { ref, inView } = useInView({ triggerOnce: true });
   const hasSentImpression = useRef(false);
+  
+  // Debug logging for categories
+  console.log('🎯 CreatorCard Debug - Creator:', fullName);
+  console.log('🎯 CreatorCard Debug - categories prop:', categories);
+  console.log('🎯 CreatorCard Debug - category prop:', category);
+  console.log('🎯 CreatorCard Debug - categories type:', typeof categories);
+  console.log('🎯 CreatorCard Debug - categories length:', categories?.length);
 
   // Debug logging for categories
   console.log('🎯 CreatorCard Debug - Creator:', fullName);
@@ -217,34 +227,34 @@ const CreatorCard: React.FC<CreatorCardProps> = ({
   return (
     <div
       ref={ref}
-      className="group bg-white rounded-xl p-6 hover:shadow-lg transition-all duration-300 cursor-pointer border border-gray-100 h-[420px] flex flex-col justify-between overflow-hidden"
+      className="group bg-white rounded-xl p-4 md:p-6 hover:shadow-lg transition-all duration-300 cursor-pointer border border-gray-100 h-[360px] sm:h-[380px] md:h-[420px] flex flex-col justify-between overflow-hidden card-gradient-bg card-hover-effect"
       onClick={handleCardClick}
     >
       {/* Header Section */}
-      <div className="flex justify-between items-start mb-6">
-        <div className="flex gap-4">
+      <div className="flex justify-between items-start mb-4 md:mb-6">
+        <div className="flex gap-3 md:gap-4">
           <div className="relative">
             <img
               src={avatar || 'https://via.placeholder.com/100?text=Creator'}
               alt={fullName}
-              className="w-14 h-14 rounded-full object-cover ring-2 ring-gray-50"
+              className="w-12 h-12 md:w-14 md:h-14 rounded-full object-cover ring-2 ring-purple-200 shadow-md group-hover:ring-purple-300 transition-all duration-300"
             />
-            <span className="absolute bottom-0 right-0 w-3.5 h-3.5 bg-green-500 border-2 border-white rounded-full"></span>
+            <span className="absolute bottom-0 right-0 w-3 h-3 md:w-3.5 md:h-3.5 bg-green-500 border-2 border-white rounded-full"></span>
           </div>
           <div>
-            <h3 className="font-medium text-gray-900">{fullName}</h3>
-            <p className="text-sm text-gray-500">{displayUsername}</p>
+            <h3 className="font-semibold text-gray-900 text-sm md:text-base">{fullName}</h3>
+            <p className="text-xs md:text-sm text-gray-500">{displayUsername}</p>
             
             <div className="flex items-center gap-2 mt-1">
               <div className="flex items-center text-yellow-500">
-                <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 20 20">
+                <svg className="w-3.5 h-3.5 md:w-4 md:h-4" fill="currentColor" viewBox="0 0 20 20">
                   <path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z" />
                 </svg>
-                <span className="text-sm font-medium text-gray-900 ml-1">
+                <span className="text-xs md:text-sm font-medium text-gray-900 ml-1">
                   {rating?.toFixed(1) || '0.0'}
                 </span>
               </div>
-              <span className="text-sm text-gray-500">
+              <span className="text-xs md:text-sm text-gray-500">
                 ({reviewCount ?? 0} reviews)
               </span>
             </div>
@@ -253,66 +263,65 @@ const CreatorCard: React.FC<CreatorCardProps> = ({
       </div>
 
       {/* Info Section */}
-      <div className="space-y-4">
-      
-        <div className="flex gap-2">
-          {/* Debug logging for categories rendering */}
-          {(() => { console.log('🎯 CreatorCard Render Debug - categories:', categories, 'category:', category); return null; })()}
-          
-          {/* Render all categories as blue chips */}
-          {categories && categories.length > 0 ? (
-            categories.map((cat, idx) => {
-              console.log('🎯 CreatorCard Render Debug - rendering category:', cat);
-              return (
-                <Link
-                  key={idx}
-                  href={`/categories/${encodeURIComponent(cat)}`}
-                  className="px-2.5 py-1 bg-blue-50 text-blue-700 text-xs font-medium rounded-md border border-blue-200 hover:bg-blue-100 transition-colors"
-                  prefetch={false}
-                  onClick={e => e.stopPropagation()}
-                >
-                  {cat}
-                </Link>
-              );
-            })
-          ) : category ? (
-            <span className="px-2.5 py-1 bg-purple-50 text-purple-700 text-xs font-medium rounded-md">
-              {category}
-            </span>
-          ) : null}
+      <div className="space-y-3 md:space-y-4">
+        <div className="flex flex-wrap gap-2">
+          {/* Categories rendering */}
+          {showCategories && (
+            <div className="flex flex-wrap gap-1 mb-2">
+              {categories && categories.length > 0 ? (
+                categories.map((cat, idx) => (
+                  <span key={idx} className="inline-block">
+                    <Link
+                      href={`/categories/${encodeURIComponent(cat)}`}
+                      className="category-pill"
+                      prefetch={false}
+                      onClick={e => e.stopPropagation()}
+                    >
+                      {cat}
+                    </Link>
+                  </span>
+                ))
+              ) : category ? (
+                <span className="category-pill">
+                  {category}
+                </span>
+              ) : null}
+            </div>
+          )}
           {level && (
-            <span className="px-2.5 py-1 bg-gray-50 text-gray-600 text-xs font-medium rounded-md">
+            <span className="px-2 py-1 bg-gray-50 text-gray-600 text-xs font-medium rounded-md border border-gray-100 group-hover:border-gray-200 transition-colors">
               {level}
             </span>
           )}
         </div>
         {title && (
-          <p className="text-sm text-purple-600 font-sm mt-1">{title}</p>
+          <p className="text-sm text-purple-600 font-medium mt-1">{title}</p>
         )}
-        <p className="text-gray-600 text-sm line-clamp-2">
+        <p className="text-gray-600 text-xs md:text-sm line-clamp-2 leading-relaxed">
           {description || 'No description available'}
         </p>
 
         {/* Social Links */}
-        <div className="flex gap-3 pt-4 border-t border-gray-100">
+        <div className="flex gap-2 md:gap-3 pt-3 md:pt-4 border-t border-gray-100 group-hover:border-gray-200 transition-colors">
+          {/* Social media links with responsive sizing */}
           {typeof socialMedia?.instagram === "string" && socialMedia.instagram ? (
             <a
               href={socialMedia.instagram}
               onClick={(e) => e.stopPropagation()}
-              className="p-2 rounded-lg hover:bg-gray-50/80 text-gray-400 hover:text-pink-500 transition-all duration-300"
+              className="p-1 sm:p-1.5 md:p-2 rounded-lg hover:bg-gray-50/80 text-gray-400 hover:text-pink-500 transition-all duration-300"
               target="_blank"
               rel="noopener noreferrer"
             >
-              <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 24 24">
+              <svg className="w-2.5 h-2.5 sm:w-3 sm:h-3 md:w-4 md:h-4" fill="currentColor" viewBox="0 0 24 24">
                 <path d="M12 2.163c3.204 0 3.584.012 4.85.07 3.252.148 4.771 1.691 4.919 4.919.058 1.265.069 1.645.069 4.849 0 3.205-.012 3.584-.069 4.849-.149 3.225-1.664 4.771-4.919 4.919-1.266.058-1.644.07-4.85.07-3.204 0-3.584-.012-4.849-.07-3.26-.149-4.771-1.699-4.919-4.92-.058-1.265-.07-1.644-.07-4.849 0-3.204.013-3.583.07-4.849.149-3.227 1.664-4.771 4.919-4.919 1.266-.057 1.645-.069 4.849-.069zm0-2.163c-3.259 0-3.667.014-4.947.072-4.358.2-6.78 2.618-6.98 6.98-.059 1.281-.073 1.689-.073 4.948 0 3.259.014 3.668.072 4.948.2 4.358 2.618 6.78 6.98 6.98 1.281.058 1.689.072 4.948.072 3.259 0 3.668-.014 4.948-.072 4.354-.2 6.782-2.618 6.979-6.98.059-1.28.073-1.689.073-4.948 0-3.259-.014-3.667-.072-4.947-.196-4.354-2.617-6.78-6.979-6.98-1.281-.059-1.69-.073-4.949-.073zm0 5.838c-3.403 0-6.162 2.759-6.162 6.162s2.759 6.163 6.162 6.163 6.162-2.759 6.162-6.163c0-3.403-2.759-6.162-6.162-6.162zm0 10.162c-2.209 0-4-1.79-4-4 0-2.209 1.791-4 4-4s4 1.791 4 4c0 2.21-1.791 4-4 4zm6.406-11.845c-.796 0-1.441.645-1.441 1.44s.645 1.44 1.441 1.44c.795 0 1.439-.645 1.439-1.44s-.644-1.44-1.439-1.44z" />
               </svg>
             </a>
           ) : socialMedia?.instagram ? (
             <span
-              className="p-2 rounded-lg text-gray-300"
+              className="p-1 sm:p-1.5 md:p-2 rounded-lg text-gray-300"
               title="Instagram profile not linked"
             >
-              <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 24 24">
+              <svg className="w-2.5 h-2.5 sm:w-3 sm:h-3 md:w-4 md:h-4" fill="currentColor" viewBox="0 0 24 24">
                 <path d="M12 2.163c3.204 0 3.584.012 4.85.07 3.252.148 4.771 1.691 4.919 4.919.058 1.265.069 1.645.069 4.849 0 3.205-.012 3.584-.069 4.849-.149 3.225-1.664 4.771-4.919 4.919-1.266.058-1.644.07-4.85.07-3.204 0-3.584-.012-4.849-.07-3.26-.149-4.771-1.699-4.919-4.92-.058-1.265-.07-1.644-.07-4.849 0-3.204.013-3.583.07-4.849.149-3.227 1.664-4.771 4.919-4.919 1.266-.057 1.645-.069 4.849-.069zm0-2.163c-3.259 0-3.667.014-4.947.072-4.358.2-6.78 2.618-6.98 6.98-.059 1.281-.073 1.689-.073 4.948 0 3.259.014 3.668.072 4.948.2 4.358 2.618 6.78 6.98 6.98 1.281.058 1.689.072 4.948.072 3.259 0 3.668-.014 4.948-.072 4.354-.2 6.782-2.618 6.979-6.98.059-1.28.073-1.689.073-4.948 0-3.259-.014-3.667-.072-4.947-.196-4.354-2.617-6.78-6.979-6.98-1.281-.059-1.69-.073-4.949-.073zm0 5.838c-3.403 0-6.162 2.759-6.162 6.162s2.759 6.163 6.162 6.163 6.162-2.759 6.162-6.163c0-3.403-2.759-6.162-6.162-6.162zm0 10.162c-2.209 0-4-1.79-4-4 0-2.209 1.791-4 4-4s4 1.791 4 4c0 2.21-1.791 4-4 4zm6.406-11.845c-.796 0-1.441.645-1.441 1.44s.645 1.44 1.441 1.44c.795 0 1.439-.645 1.439-1.44s-.644-1.44-1.439-1.44z" />
               </svg>
             </span>
@@ -431,32 +440,54 @@ const CreatorCard: React.FC<CreatorCardProps> = ({
       </div>
 
       {/* Footer */}
-      <div className="flex items-center justify-between mt-6 pt-6 border-t border-gray-100">
+      <div className="flex items-center justify-between mt-4 sm:mt-6 pt-3 sm:pt-6 border-t border-gray-100">
         <div>
           <p className="text-xs text-gray-500">Starting from</p>
           <p className="text-lg font-semibold text-purple-600">
             {startingPrice || 'Contact for price'}
           </p>
         </div>
-        <button
-          onClick={handleToggleLike}
-          className="relative group/like"
-        >
-          <div className="absolute inset-0 bg-red-500/20 rounded-full blur-xl opacity-0 group-hover/like:opacity-100 transition-opacity" />
-          <svg
-            className={`w-7 h-7 ${
-              isLiked ? "text-red-500" : "text-gray-400"
-            } hover:text-red-500 transition-colors relative`}
-            fill="currentColor"
-            viewBox="0 0 24 24"
+        <div className="flex items-center gap-2">
+          <button
+            onClick={(e) => {
+              e.stopPropagation();
+              // Clean up the username for proper routing
+              let routeUsername = displayUsername;
+              
+              // Remove @ prefix if present
+              if (routeUsername.startsWith('@')) {
+                routeUsername = routeUsername.substring(1);
+              }
+              
+              // Ensure the username is URL-safe
+              routeUsername = routeUsername.trim();
+              
+              // Navigate to the creator profile page
+              router.push(`/creator/${routeUsername}`);
+            }}
+            className="px-3 py-1.5 bg-purple-600 text-white text-sm font-medium rounded-md hover:bg-purple-700 transition-colors"
           >
-          <path d="M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5 2 5.42 4.42 3 7.5 3c1.74 0 3.41 0.81 4.5 2.09 C13.09 3.81 14.76 3 16.5 3 19.58 3 22 5.42 22 8.5 c0 3.78-3.4 6.86-8.55 11.54L12 21.35z"/>
-          </svg>
-          
-        </button>
+            View
+          </button>
+          <button
+            onClick={handleToggleLike}
+            className="relative group/like p-2 rounded-full hover:bg-red-50 transition-colors bg-gray-50 group-hover:bg-white"
+          >
+            <div className="absolute inset-0 bg-red-500/20 rounded-full blur-xl opacity-0 group-hover/like:opacity-100 transition-opacity" />
+            <svg
+              className={`w-6 h-6 sm:w-7 sm:h-7 ${
+                isLiked ? "text-red-500" : "text-gray-400"
+              } hover:text-red-500 transition-colors relative`}
+              fill="currentColor"
+              viewBox="0 0 24 24"
+            >
+            <path d="M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5 2 5.42 4.42 3 7.5 3c1.74 0 3.41 0.81 4.5 2.09 C13.09 3.81 14.76 3 16.5 3 19.58 3 22 5.42 22 8.5 c0 3.78-3.4 6.86-8.55 11.54L12 21.35z"/>
+            </svg>
+          </button>
+        </div>
       </div>
     </div>
   );
 };
 
-export default CreatorCard; 
+export default CreatorCard;

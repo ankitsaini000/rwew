@@ -22,6 +22,8 @@ const upload = multer({ storage: storage });
 router.get('/', creatorController.getPublishedCreators);
 router.get('/creators', creatorController.getCreators);
 router.get('/published', creatorController.getPublishedCreators);
+router.get('/tags', creatorController.getAvailableTags);
+router.get('/content-types', creatorController.getAvailableContentTypes);
 router.post('/similar', creatorController.getSimilarCreators);
 router.get('/creators/:username', creatorController.getPublicCreatorProfile);
 router.post('/test', creatorController.testCreator);
