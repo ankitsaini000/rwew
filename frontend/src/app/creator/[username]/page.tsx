@@ -2702,7 +2702,6 @@ export default function CreatorProfilePage({ params }: { params: { username: str
                         linkedin: creator.socialMedia?.socialProfiles?.linkedin?.url,
                         youtube: creator.socialMedia?.socialProfiles?.youtube?.url,
                         facebook: creator.socialMedia?.socialProfiles?.facebook?.url,
-                        tiktok: creator.socialMedia?.socialProfiles?.tiktok?.url,
                       }}
                     />
                   </SwiperSlide>

@@ -70,23 +70,16 @@ const nextConfig = {
   compiler: {
     styledComponents: true,
   },
-  // Experimental features
+  // Experimental/stabilized features (avoid deprecated flags)
   experimental: {
-    largePageDataBytes: 256 * 1000, // Increased from 128KB to 256KB
-    // Enable server actions
-    serverActions: true,
-    // Enable new next link behavior
-    newNextLinkBehavior: true,
-    // Improve build performance
+    largePageDataBytes: 256 * 1000,
     optimizeCss: true,
-    // Improve build performance
     optimizePackageImports: [
       'react-icons',
       'lucide-react',
       '@heroicons/react',
       'date-fns'
     ],
-    // External packages for server components
     serverComponentsExternalPackages: ['mongoose'],
   },
   // API rewrites
@@ -123,11 +116,7 @@ const nextConfig = {
 
     return config;
   },
-  // Disable static optimization for problematic pages
-  experimental: {
-    serverComponentsExternalPackages: ['mongoose'],
-    serverActions: true,
-  },
+  // Note: Do not redeclare experimental; Server Actions are enabled by default in Next.js 14+
   // Configure page data cache
   onDemandEntries: {
     maxInactiveAge: 25 * 1000,

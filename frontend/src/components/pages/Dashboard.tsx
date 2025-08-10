@@ -1424,13 +1424,13 @@ export function Dashboard() {
                         isLiked={false}
                         title={creator.title || creator.professionalInfo?.title || ''}
                         completedProjects={creator.metrics?.profileMetrics?.projectsCompleted || creator.metrics?.completedProjects || 0}
-                        socialMedia={{
-                         instagram: creator.socialMedia?.socialProfiles?.instagram?.url || creator.socialMedia?.socialProfiles?.instagram,
-                          twitter: creator.socialMedia?.socialProfiles?.twitter?.url   || creator.socialMedia?.socialProfiles?.twitter,
-                          linkedin: creator.socialMedia?.socialProfiles?.linkedin?.url || creator.socialMedia?.socialProfiles?.linkedin,
-                          youtube: creator.socialMedia?.socialProfiles?.youtube?.url || creator.socialMedia?.socialProfiles?.youtube,
-                          facebook: creator.socialMedia?.socialProfiles?.facebook?.url || creator.socialMedia?.socialProfiles?.facebook,
-                        }}
+                         socialMedia={{
+                           instagram: creator.socialMedia?.socialProfiles?.instagram?.url || creator.socialMedia?.socialProfiles?.instagram,
+                           twitter: creator.socialMedia?.socialProfiles?.twitter?.url || creator.socialMedia?.socialProfiles?.twitter,
+                           linkedin: creator.socialMedia?.socialProfiles?.linkedin?.url || creator.socialMedia?.socialProfiles?.linkedin,
+                           youtube: creator.socialMedia?.socialProfiles?.youtube?.url || creator.socialMedia?.socialProfiles?.youtube,
+                           facebook: creator.socialMedia?.socialProfiles?.facebook?.url || creator.socialMedia?.socialProfiles?.facebook,
+                         }}
                       />
                     </SwiperSlide>
                   ))}
