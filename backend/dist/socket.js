@@ -12,7 +12,7 @@ const initializeSocket = (httpServer) => {
     console.log('Initializing Socket.IO...');
     io = new socket_io_1.Server(httpServer, {
         cors: {
-            origin: process.env.FRONTEND_URL || 'http://localhost:3000',
+            origin: process.env.FRONTEND_URL || 'https://row-eight-weld.vercel.app',
             methods: ['GET', 'POST']
         }
     });

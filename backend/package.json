@@ -7,8 +7,7 @@
     "start": "node dist/index.js",
     "dev": "nodemon --exec ts-node --transpile-only src/index.ts",
     "test": "echo \"Error: no test specified\" && exit 1",
-    "seed:locations": "ts-node src/scripts/seed-locations.ts",
-    "install": "npm install --legacy-peer-deps"
+    "seed:locations": "ts-node src/scripts/seed-locations.ts"
   },
   "keywords": [],
   "author": "",
@@ -25,7 +24,7 @@
     "@types/twilio": "^3.19.2",
     "bcrypt": "^5.1.1",
     "class-variance-authority": "^0.7.1",
-    "cloudinary": "^1.41.3",
+    "cloudinary": "^2.6.1",
     "clsx": "^2.1.1",
     "cookie-session": "^2.1.0",
     "cors": "^2.8.5",
