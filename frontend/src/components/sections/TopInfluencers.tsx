@@ -159,15 +159,20 @@ export const TopInfluencers = () => {
                     username={creator.username || creator.personalInfo?.username || ''}
                     fullName={creator.name || creator.fullName || creator.personalInfo?.fullName || creator.personalInfo?.name || creator.username || ''}
                     avatar={creator.avatar || creator.personalInfo?.profileImage}
-                    categories={creator.categories || []}
-                    category={creator.category || ''}
+                     categories={Array.isArray(creator.categories) && creator.categories.length > 0
+                       ? creator.categories
+                       : (creator.category ? [creator.category] : (Array.isArray(creator.professionalInfo?.categories) ? creator.professionalInfo.categories : []))}
+                     category={creator.category || creator.professionalInfo?.category || ''}
                     level={creator.level || creator.professionalInfo?.title}
                     description={creator.bio || creator.description || creator.personalInfo?.bio || creator.descriptionFaq?.briefDescription}
                     rating={creator.rating || creator.metrics?.ratings?.average || 0}
                     reviewCount={creator.reviewCount || creator.metrics?.ratings?.count || 0}
-                    startingPrice={typeof creator.startingPrice === 'string' || typeof creator.startingPrice === 'number'
-                      ? creator.startingPrice
-                      : (typeof creator.pricing?.basic === 'number' ? `₹${creator.pricing.basic}` : undefined)}
+                    startingPrice={
+                      typeof creator.startingPrice === 'number' ? creator.startingPrice :
+                      (typeof creator.startingPrice === 'string' && creator.startingPrice.trim() ? creator.startingPrice :
+                        (typeof creator.pricing?.standard?.price === 'number' ? creator.pricing.standard.price :
+                          (typeof creator.pricing?.basic?.price === 'number' ? creator.pricing.basic.price : undefined)))
+                    }
                     isLiked={false}
                     title={creator.title || creator.professionalInfo?.title}
                     completedProjects={creator.completedProjects}
@@ -187,15 +192,20 @@ export const TopInfluencers = () => {
                     username={creator.username || creator.personalInfo?.username || ''}
                     fullName={creator.name || creator.fullName || creator.personalInfo?.fullName || creator.personalInfo?.name || creator.username || ''}
                     avatar={creator.avatar || creator.personalInfo?.profileImage}
-                    categories={creator.categories || []}
-                    category={creator.category || ''}
+                     categories={Array.isArray(creator.categories) && creator.categories.length > 0
+                       ? creator.categories
+                       : (creator.category ? [creator.category] : (Array.isArray(creator.professionalInfo?.categories) ? creator.professionalInfo.categories : []))}
+                     category={creator.category || creator.professionalInfo?.category || ''}
                     level={creator.level || creator.professionalInfo?.title}
                     description={creator.bio || creator.description || creator.personalInfo?.bio || creator.descriptionFaq?.briefDescription}
                     rating={creator.rating || creator.metrics?.ratings?.average || 0}
                     reviewCount={creator.reviewCount || creator.metrics?.ratings?.count || 0}
-                    startingPrice={typeof creator.startingPrice === 'string' || typeof creator.startingPrice === 'number'
-                      ? creator.startingPrice
-                      : (typeof creator.pricing?.basic === 'number' ? `₹${creator.pricing.basic}` : undefined)}
+                    startingPrice={
+                      typeof creator.startingPrice === 'number' ? creator.startingPrice :
+                      (typeof creator.startingPrice === 'string' && creator.startingPrice.trim() ? creator.startingPrice :
+                        (typeof creator.pricing?.standard?.price === 'number' ? creator.pricing.standard.price :
+                          (typeof creator.pricing?.basic?.price === 'number' ? creator.pricing.basic.price : undefined)))
+                    }
                     isLiked={false}
                     title={creator.title || creator.professionalInfo?.title}
                     completedProjects={creator.completedProjects}

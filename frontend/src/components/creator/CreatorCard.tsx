@@ -31,7 +31,7 @@ export interface CreatorCardProps {
     linkedin?: string;
     youtube?: string;
     facebook?: string;
-    tiktok?: string;
+    // tiktok?: string; // commented out per request
   };
 }
 
@@ -115,6 +115,45 @@ const CreatorCard: React.FC<CreatorCardProps> = ({
     // Navigate to the creator profile page
     console.log('🔄 Navigating to creator profile:', `/creator/${routeUsername}`);
     router.push(`/creator/${routeUsername}`);
+  };
+
+  // Normalize incoming social values (url/handle/username) to clickable URLs
+  const toUrl = (platform: string, raw?: any): string => {
+    if (!raw) return '';
+    let value = '';
+    if (typeof raw === 'string') value = raw.trim();
+    else if (typeof raw === 'object' && raw !== null) {
+      // Common shapes: { url }, { handle }, { username }
+      value = String((raw as any).url || (raw as any).handle || (raw as any).username || '').trim();
+    }
+    if (!value) return '';
+    if (/^https?:\/\//i.test(value)) return value;
+    value = value.replace(/^@/, '').replace(/\/$/, '');
+    switch (platform) {
+      case 'instagram':
+        return `https://instagram.com/${value}`;
+      case 'twitter':
+        return `https://twitter.com/${value}`;
+      case 'linkedin':
+        return /^linkedin\.com\//i.test(value) ? `https://${value}` : `https://linkedin.com/in/${value}`;
+      case 'youtube':
+        return /^youtube\.com\//i.test(value) ? `https://${value}` : `https://youtube.com/${value}`;
+      case 'facebook':
+        return `https://facebook.com/${value}`;
+      // case 'tiktok':
+      //   return `https://tiktok.com/@${value}`;
+      default:
+        return value;
+    }
+  };
+
+  const socialLinks = {
+    instagram: toUrl('instagram', socialMedia?.instagram),
+    twitter: toUrl('twitter', socialMedia?.twitter),
+    linkedin: toUrl('linkedin', socialMedia?.linkedin),
+    youtube: toUrl('youtube', socialMedia?.youtube),
+    facebook: toUrl('facebook', socialMedia?.facebook),
+    // tiktok: toUrl('tiktok', socialMedia?.tiktok),
   };
 
   const handleToggleLike = async (e: React.MouseEvent) => {
@@ -227,6 +266,29 @@ const CreatorCard: React.FC<CreatorCardProps> = ({
     }
   }, [inView, id]);
 
+  // Derive a primary category for header display
+  const normalizeCategory = (value: any): string | undefined => {
+    if (!value) return undefined;
+    if (typeof value === 'string') return value;
+    if (typeof value === 'object') {
+      const candidate = (value as any).name || (value as any).title || (value as any).label || (value as any).category;
+      if (candidate) return String(candidate);
+    }
+    return undefined;
+  };
+
+  const normalizedCategories: string[] = Array.isArray(categories)
+    ? categories.map(normalizeCategory).filter((c): c is string => Boolean(c))
+    : [];
+
+  if (normalizedCategories.length === 0) {
+    const single = normalizeCategory(category);
+    if (single) normalizedCategories.push(single);
+  }
+
+  const primaryCategory: string | undefined = normalizedCategories[0];
+  const remainingCategories: string[] = normalizedCategories.slice(1);
+
   return (
     <div
       ref={ref}
@@ -247,6 +309,7 @@ const CreatorCard: React.FC<CreatorCardProps> = ({
           <div>
             <h3 className="font-semibold text-gray-900 text-sm md:text-base">{fullName}</h3>
             <p className="text-xs md:text-sm text-gray-500">{displayUsername}</p>
+            {/* Category chip moved below into info section (above title) */}
             
             <div className="flex items-center gap-2 mt-1">
               <div className="flex items-center text-yellow-500">
@@ -268,27 +331,21 @@ const CreatorCard: React.FC<CreatorCardProps> = ({
       {/* Info Section */}
       <div className="space-y-3 md:space-y-4">
         <div className="flex flex-wrap gap-2">
-          {/* Categories rendering */}
-          {showCategories && (
-            <div className="flex flex-wrap gap-1 mb-2">
-              {categories && categories.length > 0 ? (
-                categories.map((cat, idx) => (
-                  <span key={idx} className="inline-block">
-                    <Link
-                      href={`/categories/${encodeURIComponent(cat)}`}
-                      className="category-pill"
-                      prefetch={false}
-                      onClick={e => e.stopPropagation()}
-                    >
-                      {cat}
-                    </Link>
-                  </span>
-                ))
-              ) : category ? (
-                <span className="category-pill">
-                  {category}
+          {/* Categories shown above the title */}
+          {showCategories && normalizedCategories.length > 0 && (
+            <div className="flex flex-wrap gap-1 mb-2 w-full">
+              {normalizedCategories.map((cat, idx) => (
+                <span key={idx} className="inline-block">
+                  <Link
+                    href={`/categories/${encodeURIComponent(cat)}`}
+                    className="category-pill"
+                    prefetch={false}
+                    onClick={e => e.stopPropagation()}
+                  >
+                    {cat}
+                  </Link>
                 </span>
-              ) : null}
+              ))}
             </div>
           )}
           {level && (
@@ -305,140 +362,121 @@ const CreatorCard: React.FC<CreatorCardProps> = ({
         </p>
 
         {/* Social Links */}
-        <div className="flex gap-2 md:gap-3 pt-3 md:pt-4 border-t border-gray-100 group-hover:border-gray-200 transition-colors">
+        <div className="flex items-center gap-3 md:gap-3 pt-3 md:pt-4 border-t border-gray-100 group-hover:border-gray-200 transition-colors">
           {/* Social media links with responsive sizing */}
-          {typeof socialMedia?.instagram === "string" && socialMedia.instagram ? (
+          {socialLinks.instagram ? (
             <a
-              href={socialMedia.instagram}
+              href={socialLinks.instagram}
               onClick={(e) => e.stopPropagation()}
-              className="p-1 sm:p-1.5 md:p-2 rounded-lg hover:bg-gray-50/80 text-gray-400 hover:text-pink-500 transition-all duration-300"
+              className="p-2 rounded-lg hover:bg-gray-50/80 text-gray-400 hover:text-pink-500 transition-all duration-300"
               target="_blank"
               rel="noopener noreferrer"
             >
-              <svg className="w-2.5 h-2.5 sm:w-3 sm:h-3 md:w-4 md:h-4" fill="currentColor" viewBox="0 0 24 24">
+              <svg className="w-5 h-5 md:w-5 md:h-5" fill="currentColor" viewBox="0 0 24 24">
                 <path d="M12 2.163c3.204 0 3.584.012 4.85.07 3.252.148 4.771 1.691 4.919 4.919.058 1.265.069 1.645.069 4.849 0 3.205-.012 3.584-.069 4.849-.149 3.225-1.664 4.771-4.919 4.919-1.266.058-1.644.07-4.85.07-3.204 0-3.584-.012-4.849-.07-3.26-.149-4.771-1.699-4.919-4.92-.058-1.265-.07-1.644-.07-4.849 0-3.204.013-3.583.07-4.849.149-3.227 1.664-4.771 4.919-4.919 1.266-.057 1.645-.069 4.849-.069zm0-2.163c-3.259 0-3.667.014-4.947.072-4.358.2-6.78 2.618-6.98 6.98-.059 1.281-.073 1.689-.073 4.948 0 3.259.014 3.668.072 4.948.2 4.358 2.618 6.78 6.98 6.98 1.281.058 1.689.072 4.948.072 3.259 0 3.668-.014 4.948-.072 4.354-.2 6.782-2.618 6.979-6.98.059-1.28.073-1.689.073-4.948 0-3.259-.014-3.667-.072-4.947-.196-4.354-2.617-6.78-6.979-6.98-1.281-.059-1.69-.073-4.949-.073zm0 5.838c-3.403 0-6.162 2.759-6.162 6.162s2.759 6.163 6.162 6.163 6.162-2.759 6.162-6.163c0-3.403-2.759-6.162-6.162-6.162zm0 10.162c-2.209 0-4-1.79-4-4 0-2.209 1.791-4 4-4s4 1.791 4 4c0 2.21-1.791 4-4 4zm6.406-11.845c-.796 0-1.441.645-1.441 1.44s.645 1.44 1.441 1.44c.795 0 1.439-.645 1.439-1.44s-.644-1.44-1.439-1.44z" />
               </svg>
             </a>
-          ) : socialMedia?.instagram ? (
+          ) : (
             <span
-              className="p-1 sm:p-1.5 md:p-2 rounded-lg text-gray-300"
+              className="p-2 rounded-lg text-gray-300"
               title="Instagram profile not linked"
             >
-              <svg className="w-2.5 h-2.5 sm:w-3 sm:h-3 md:w-4 md:h-4" fill="currentColor" viewBox="0 0 24 24">
+              <svg className="w-5 h-5 md:w-5 md:h-5" fill="currentColor" viewBox="0 0 24 24">
                 <path d="M12 2.163c3.204 0 3.584.012 4.85.07 3.252.148 4.771 1.691 4.919 4.919.058 1.265.069 1.645.069 4.849 0 3.205-.012 3.584-.069 4.849-.149 3.225-1.664 4.771-4.919 4.919-1.266.058-1.644.07-4.85.07-3.204 0-3.584-.012-4.849-.07-3.26-.149-4.771-1.699-4.919-4.92-.058-1.265-.07-1.644-.07-4.849 0-3.204.013-3.583.07-4.849.149-3.227 1.664-4.771 4.919-4.919 1.266-.057 1.645-.069 4.849-.069zm0-2.163c-3.259 0-3.667.014-4.947.072-4.358.2-6.78 2.618-6.98 6.98-.059 1.281-.073 1.689-.073 4.948 0 3.259.014 3.668.072 4.948.2 4.358 2.618 6.78 6.98 6.98 1.281.058 1.689.072 4.948.072 3.259 0 3.668-.014 4.948-.072 4.354-.2 6.782-2.618 6.979-6.98.059-1.28.073-1.689.073-4.948 0-3.259-.014-3.667-.072-4.947-.196-4.354-2.617-6.78-6.979-6.98-1.281-.059-1.69-.073-4.949-.073zm0 5.838c-3.403 0-6.162 2.759-6.162 6.162s2.759 6.163 6.162 6.163 6.162-2.759 6.162-6.163c0-3.403-2.759-6.162-6.162-6.162zm0 10.162c-2.209 0-4-1.79-4-4 0-2.209 1.791-4 4-4s4 1.791 4 4c0 2.21-1.791 4-4 4zm6.406-11.845c-.796 0-1.441.645-1.441 1.44s.645 1.44 1.441 1.44c.795 0 1.439-.645 1.439-1.44s-.644-1.44-1.439-1.44z" />
               </svg>
             </span>
-          ) : null}
-          {typeof socialMedia?.twitter === "string" && socialMedia.twitter ? (
+          )}
+          {socialLinks.twitter ? (
             <a
-              href={socialMedia.twitter}
+              href={socialLinks.twitter}
               onClick={(e) => e.stopPropagation()}
               className="p-2 rounded-lg hover:bg-gray-50/80 text-gray-400 hover:text-blue-400 transition-all duration-300"
               target="_blank"
               rel="noopener noreferrer"
             >
-              <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 24 24">
+              <svg className="w-5 h-5 md:w-5 md:h-5" fill="currentColor" viewBox="0 0 24 24">
                 <path d="M23.953 4.57a10 10 0 01-2.825.775 4.958 4.958 0 002.163-2.723c-.951.555-2.005.959-3.127 1.184a4.92 4.92 0 00-8.384 4.482C7.69 8.095 4.067 6.13 1.64 3.162a4.822 4.822 0 00-.666 2.475c0 1.71.87 3.213 2.188 4.096a4.904 4.904 0 01-2.228-.616v.06a4.923 4.923 0 003.946 4.827 4.996 4.996 0 01-2.212.085 4.936 4.936 0 004.604 3.417 9.867 9.867 0 01-6.102 2.105c-.39 0-.779-.023-1.17-.067a13.995 13.995 0 007.557 2.209c9.053 0 13.998-7.496 13.998-13.985 0-.21 0-.42-.015-.63A9.935 9.935 0 0024 4.59z" />
               </svg>
             </a>
-          ) : socialMedia?.twitter ? (
+          ) : (
             <span
               className="p-2 rounded-lg text-gray-300"
               title="Twitter profile not linked"
             >
-              <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 24 24">
+              <svg className="w-5 h-5 md:w-5 md:h-5" fill="currentColor" viewBox="0 0 24 24">
                 <path d="M23.953 4.57a10 10 0 01-2.825.775 4.958 4.958 0 002.163-2.723c-.951.555-2.005.959-3.127 1.184a4.92 4.92 0 00-8.384 4.482C7.69 8.095 4.067 6.13 1.64 3.162a4.822 4.822 0 00-.666 2.475c0 1.71.87 3.213 2.188 4.096a4.904 4.904 0 01-2.228-.616v.06a4.923 4.923 0 003.946 4.827 4.996 4.996 0 01-2.212.085 4.936 4.936 0 004.604 3.417 9.867 9.867 0 01-6.102 2.105c-.39 0-.779-.023-1.17-.067a13.995 13.995 0 007.557 2.209c9.053 0 13.998-7.496 13.998-13.985 0-.21 0-.42-.015-.63A9.935 9.935 0 0024 4.59z" />
               </svg>
             </span>
-          ) : null}
-          {typeof socialMedia?.linkedin === "string" && socialMedia.linkedin ? (
+          )}
+          {socialLinks.linkedin ? (
             <a
-              href={socialMedia.linkedin}
+              href={socialLinks.linkedin}
               onClick={(e) => e.stopPropagation()}
               className="p-2 rounded-lg hover:bg-gray-50/80 text-gray-400 hover:text-blue-600 transition-all duration-300"
               target="_blank"
               rel="noopener noreferrer"
             >
-              <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 24 24">
+              <svg className="w-5 h-5 md:w-5 md:h-5" fill="currentColor" viewBox="0 0 24 24">
                 <path d="M20.447 20.452h-3.554v-5.569c0-1.328-.027-3.037-1.852-3.037-1.853 0-2.136 1.445-2.136 2.939v5.667H9.351V9h3.414v1.561h.046c.477-.9 1.637-1.85 3.37-1.85 3.601 0 4.267 2.37 4.267 5.455v6.286zM5.337 7.433c-1.144 0-2.063-.926-2.063-2.065 0-1.138.92-2.063 2.063-2.063 1.14 0 2.064.925 2.064 2.063 0 1.139-.925 2.065-2.064 2.065zm1.782 13.019H3.555V9h3.564v11.452zM22.225 0H1.771C.792 0 0 .774 0 1.729v20.542C0 23.227.792 24 1.771 24h20.451C23.2 24 24 23.227 24 22.271V1.729C24 .774 23.407 0 22.675 0z" />
               </svg>
             </a>
-          ) : socialMedia?.linkedin ? (
+          ) : (
             <span
               className="p-2 rounded-lg text-gray-300"
               title="LinkedIn profile not linked"
             >
-              <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 24 24">
+              <svg className="w-5 h-5 md:w-5 md:h-5" fill="currentColor" viewBox="0 0 24 24">
                 <path d="M20.447 20.452h-3.554v-5.569c0-1.328-.027-3.037-1.852-3.037-1.853 0-2.136 1.445-2.136 2.939v5.667H9.351V9h3.414v1.561h.046c.477-.9 1.637-1.85 3.37-1.85 3.601 0 4.267 2.37 4.267 5.455v6.286zM5.337 7.433c-1.144 0-2.063-.926-2.063-2.065 0-1.138.92-2.063 2.063-2.063 1.14 0 2.064.925 2.064 2.063 0 1.139-.925 2.065-2.064 2.065zm1.782 13.019H3.555V9h3.564v11.452zM22.225 0H1.771C.792 0 0 .774 0 1.729v20.542C0 23.227.792 24 1.771 24h20.451C23.2 24 24 23.227 24 22.271V1.729C24 .774 23.407 0 22.675 0z" />
               </svg>
             </span>
-          ) : null}
-          {typeof socialMedia?.youtube === "string" && socialMedia.youtube ? (
+          )}
+          {socialLinks.youtube ? (
             <a
-              href={socialMedia.youtube}
+              href={socialLinks.youtube}
               onClick={(e) => e.stopPropagation()}
               className="p-2 rounded-lg hover:bg-gray-50/80 text-gray-400 hover:text-red-500 transition-all duration-300"
               target="_blank"
               rel="noopener noreferrer"
             >
-              <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 24 24">
+              <svg className="w-5 h-5 md:w-5 md:h-5" fill="currentColor" viewBox="0 0 24 24">
                 <path d="M23.498 6.186a3.016 3.016 0 0 0-2.122-2.136C19.505 3.545 12 3.545 12 3.545s-7.505 0-9.377.505A3.017 3.017 0 0 0 .502 6.186C0 8.07 0 12 0 12s0 3.93.502 5.814a3.016 3.016 0 0 0 2.122 2.136c1.871.505 9.376.505 9.376.505s7.505 0 9.377-.505a3.015 3.015 0 0 0 2.122-2.136C24 15.93 24 12 24 12s0-3.93-.502-5.814zM9.545 15.568V8.432L15.818 12l-6.273 3.568z" />
               </svg>
             </a>
-          ) : socialMedia?.youtube ? (
+          ) : (
             <span
               className="p-2 rounded-lg text-gray-300"
               title="YouTube channel not linked"
             >
-              <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 24 24">
+              <svg className="w-5 h-5 md:w-5 md:h-5" fill="currentColor" viewBox="0 0 24 24">
                 <path d="M23.498 6.186a3.016 3.016 0 0 0-2.122-2.136C19.505 3.545 12 3.545 12 3.545s-7.505 0-9.377.505A3.017 3.017 0 0 0 .502 6.186C0 8.07 0 12 0 12s0 3.93.502 5.814a3.016 3.016 0 0 0 2.122 2.136c1.871.505 9.376.505 9.376.505s7.505 0 9.377-.505a3.015 3.015 0 0 0 2.122-2.136C24 15.93 24 12 24 12s0-3.93-.502-5.814zM9.545 15.568V8.432L15.818 12l-6.273 3.568z" />
               </svg>
             </span>
-          ) : null}
-          {typeof socialMedia?.facebook === "string" && socialMedia.facebook ? (
+          )}
+          {socialLinks.facebook ? (
             <a
-              href={socialMedia.facebook}
+              href={socialLinks.facebook}
               onClick={(e) => e.stopPropagation()}
               className="p-2 rounded-lg hover:bg-gray-50/80 text-gray-400 hover:text-blue-600 transition-all duration-300"
               target="_blank"
               rel="noopener noreferrer"
             >
-              <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 24 24">
+              <svg className="w-5 h-5 md:w-5 md:h-5" fill="currentColor" viewBox="0 0 24 24">
                 <path d="M22.675 0H1.325C.593 0 0 .593 0 1.325v21.351C0 23.407.593 24 1.325 24H12.82v-9.294H9.692v-3.622h3.128V8.413c0-3.1 1.893-4.788 4.659-4.788 1.325 0 2.463.099 2.795.143v3.24l-1.918.001c-1.504 0-1.795.715-1.795 1.763v2.313h3.587l-.467 3.622h-3.12V24h6.116c.73 0 1.323-.593 1.323-1.325V1.325C24 .593 23.407 0 22.675 0z" />
               </svg>
             </a>
-          ) : socialMedia?.facebook ? (
+          ) : (
             <span
               className="p-2 rounded-lg text-gray-300"
               title="Facebook profile not linked"
             >
-              <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 24 24">
+              <svg className="w-5 h-5 md:w-5 md:h-5" fill="currentColor" viewBox="0 0 24 24">
                 <path d="M22.675 0H1.325C.593 0 0 .593 0 1.325v21.351C0 23.407.593 24 1.325 24H12.82v-9.294H9.692v-3.622h3.128V8.413c0-3.1 1.893-4.788 4.659-4.788 1.325 0 2.463.099 2.795.143v3.24l-1.918.001c-1.504 0-1.795.715-1.795 1.763v2.313h3.587l-.467 3.622h-3.12V24h6.116c.73 0 1.323-.593 1.323-1.325V1.325C24 .593 23.407 0 22.675 0z" />
               </svg>
             </span>
-          ) : null}
-          {typeof socialMedia?.tiktok === "string" && socialMedia.tiktok ? (
-            <a
-              href={socialMedia.tiktok}
-              onClick={(e) => e.stopPropagation()}
-              className="p-2 rounded-lg hover:bg-gray-50/80 text-gray-400 hover:text-black transition-all duration-300"
-              target="_blank"
-              rel="noopener noreferrer"
-            >
-              <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 24 24">
-                <path d="M19.59 6.69a4.83 4.83 0 0 1-3.77-4.25V2h-3.45v13.67a2.89 2.89 0 0 1-5.2 1.74 2.89 2.89 0 0 1 2.31-4.64 2.93 2.93 0 0 1 .88.13V9.4a6.84 6.84 0 0 0-1-.05A6.33 6.33 0 0 0 5 20.1a6.34 6.34 0 0 0 10.86-4.43v-7a8.16 8.16 0 0 0 4.77 1.52v-3.4a4.85 4.85 0 0 1-1-.1z"/>
-              </svg>
-            </a>
-          ) : socialMedia?.tiktok ? (
-            <span
-              className="p-2 rounded-lg text-gray-300"
-              title="TikTok profile not linked"
-            >
-              <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 24 24">
-                <path d="M19.59 6.69a4.83 4.83 0 0 1-3.77-4.25V2h-3.45v13.67a2.89 2.89 0 0 1-5.2 1.74 2.89 2.89 0 0 1 2.31-4.64 2.93 2.93 0 0 1 .88.13V9.4a6.84 6.84 0 0 0-1-.05A6.33 6.33 0 0 0 5 20.1a6.34 6.34 0 0 0 10.86-4.43v-7a8.16 8.16 0 0 0 4.77 1.52v-3.4a4.85 4.85 0 0 1-1-.1z"/>
-              </svg>
-            </span>
-          ) : null}
+          )}
+          {false && (
+            <span className="hidden" />
+          )}
         </div>
       </div>
 
@@ -447,7 +485,19 @@ const CreatorCard: React.FC<CreatorCardProps> = ({
         <div>
           <p className="text-xs text-gray-500">Starting from</p>
           <p className="text-lg font-semibold text-purple-600">
-            {startingPrice || 'Contact for price'}
+            {(() => {
+              // Normalize starting price from various shapes
+              if (typeof startingPrice === 'string') {
+                const s = startingPrice.trim();
+                if (s) return s.startsWith('₹') ? s : `₹${s}`;
+              }
+              if (typeof startingPrice === 'number' && !isNaN(Number(startingPrice))) {
+                const priceNum: number = Number(startingPrice);
+                return `₹${priceNum.toLocaleString('en-IN')}`;
+              }
+              // If not provided, show CTA text
+              return 'Contact for price';
+            })()}
           </p>
         </div>
         <div className="flex items-center gap-2">

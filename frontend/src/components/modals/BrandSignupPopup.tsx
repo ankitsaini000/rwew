@@ -128,13 +128,13 @@ export const BrandSignupPopup: React.FC<BrandSignupPopupProps> = ({ isOpen, onCl
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-gradient-to-br from-purple-900/80 via-purple-700/80 to-pink-500/80 p-2 sm:p-4">
-      <div className="w-full max-w-xl h-[95vh] overflow-y-auto relative animate-fadeIn rounded-2xl shadow-2xl border border-purple-100 bg-white">
+      <div className="w-[92vw] sm:w-full max-w-md sm:max-w-xl h-[80vh] sm:h-[90vh] overflow-y-auto relative animate-fadeIn rounded-2xl shadow-2xl border border-purple-100 bg-white">
         {/* Progress Bar */}
         <div className="absolute top-0 left-0 w-full h-2 bg-gradient-to-r from-purple-400 to-pink-400 rounded-t-2xl overflow-hidden">
           <div className="h-full bg-gradient-to-r from-purple-600 to-pink-500 transition-all duration-500" style={{ width: `${progress}%` }} />
         </div>
         <button onClick={onClose} className="absolute top-4 right-4 text-purple-400 hover:text-purple-700 p-2 rounded-full hover:bg-purple-100 transition-colors text-2xl z-10">&times;</button>
-        <div className="bg-gradient-to-r from-purple-600 via-purple-500 to-pink-500 px-8 py-3 rounded-t-2xl flex flex-col items-center text-center">
+        <div className="bg-gradient-to-r from-purple-600 via-purple-500 to-pink-500 px-4 py-2 sm:px-8 sm:py-3 rounded-t-2xl flex flex-col items-center text-center">
           <span className="inline-flex items-center justify-center w-12 h-12 rounded-full bg-white shadow-lg text-purple-600 text-2xl mb-2 border-4 border-purple-200">
             <Sparkles className="w-7 h-7 text-purple-400" />
           </span>
@@ -146,7 +146,7 @@ export const BrandSignupPopup: React.FC<BrandSignupPopupProps> = ({ isOpen, onCl
           </p>
         </div>
         <form onSubmit={handleSubmit}>
-          <div className="px-8 py-3 space-y-4">
+          <div className="px-4 sm:px-8 py-3 space-y-4">
             {/* Brand Info Section */}
             {!isSignedIn && (
               <div>

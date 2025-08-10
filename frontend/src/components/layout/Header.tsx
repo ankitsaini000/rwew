@@ -288,13 +288,13 @@ export const Header: React.FC = () => {
           ) : (
             <>
               <button
-                onClick={() => openAuthModal("login")}
+                onClick={() => router.push('/login')}
                 className="px-4 py-2 text-gray-700 hover:text-purple-600 transition-colors"
               >
                 Sign in
               </button>
               <button
-                onClick={() => openAuthModal("register")}
+                onClick={() => router.push('/register')}
                 className="px-6 py-2 rounded-full bg-gradient-to-r from-purple-600 to-pink-600 text-white hover:opacity-90 transition-all shadow-md hover:shadow-lg"
               >
                 Register
@@ -303,12 +303,57 @@ export const Header: React.FC = () => {
           )}
         </div>
 
-        {/* Mobile Menu Button - keep existing code */}
-        
+        {/* Mobile Menu Toggle */}
+        <div className="md:hidden">
+          <button
+            aria-label={isMobileMenuOpen ? 'Close menu' : 'Open menu'}
+            onClick={handleMobileMenuToggle}
+            className="p-2 rounded-lg hover:bg-white/30 active:bg-white/40 transition-colors"
+            type="button"
+          >
+            {isMobileMenuOpen ? (
+              <X className="h-6 w-6 text-gray-700" />
+            ) : (
+              <Menu className="h-6 w-6 text-gray-700" />
+            )}
+          </button>
+        </div>
+
       </nav>
 
-      {/* Mobile Navigation - keep existing code but update styling */}
-      
+      {/* Mobile Navigation */}
+      {isMobileMenuOpen && (
+        <div className="md:hidden border-t border-gray-100 bg-white/70 backdrop-blur-xl">
+          <div className="container mx-auto px-4 py-4 space-y-3">
+            <Link href="#" className="block text-gray-700 hover:text-purple-600">Contact us</Link>
+            {!user && (
+              <>
+                <button
+                  onClick={handleBecomingCreator}
+                  className="block w-full text-left text-gray-700 hover:text-purple-600"
+                >
+                  {isBecomingCreatorPage ? 'Hire an Influencer' : 'Become a Creator'}
+                </button>
+                <div className="flex gap-3 pt-2">
+                  <button
+                    onClick={() => router.push('/login')}
+                    className="flex-1 px-4 py-2 rounded-lg border border-gray-200 text-gray-700 hover:border-purple-300 hover:text-purple-600"
+                  >
+                    Sign in
+                  </button>
+                  <button
+                    onClick={() => router.push('/register')}
+                    className="flex-1 px-4 py-2 rounded-lg bg-gradient-to-r from-purple-600 to-pink-600 text-white"
+                  >
+                    Register
+                  </button>
+                </div>
+              </>
+            )}
+          </div>
+        </div>
+      )}
+
       {/* Auth Modal */}
       <AuthModal
         isOpen={isAuthModalOpen}

@@ -42,7 +42,7 @@ export default function SuspendAccountPage() {
       setLoading(true);
       setError(null);
       try {
-        const res = await fetch("http://localhost:5001/api/creators/admin/suspended", {
+        const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL || 'https://rwew.onrender.com/api'}/creators/admin/suspended`, {
           credentials: "include"
         });
         const data = await res.json();
@@ -57,7 +57,7 @@ export default function SuspendAccountPage() {
       setBrandLoading(true);
       setBrandError(null);
       try {
-        const res = await fetch("http://localhost:5001/api/brand-profiles/all");
+        const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL || 'https://rwew.onrender.com/api'}/brand-profiles/all`);
         if (!res.ok) throw new Error("Failed to fetch brands");
         const data = await res.json();
         setBrands((data.data || []).filter((b: any) => b.status === 'inactive'));
@@ -88,7 +88,7 @@ export default function SuspendAccountPage() {
   const handleActivate = async (creator: Creator) => {
     if (!creator.userId?.username) return;
     try {
-      const res = await fetch(`http://localhost:5001/api/creators/admin/${creator.userId.username}/reactivate`, {
+      const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL || 'https://rwew.onrender.com/api'}/creators/admin/${creator.userId.username}/reactivate`, {
         method: 'PUT',
         headers: { 'Content-Type': 'application/json' },
       });
@@ -107,7 +107,7 @@ export default function SuspendAccountPage() {
     setReactivateError(null);
     try {
       const token = localStorage.getItem('token');
-      const res = await fetch(`http://localhost:5001/api/brand-profiles/${brand._id}/reactivate`, {
+      const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL || 'https://rwew.onrender.com/api'}/brand-profiles/${brand._id}/reactivate`, {
         method: 'PUT',
         headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
       });

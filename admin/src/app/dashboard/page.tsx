@@ -40,7 +40,7 @@ export default function DashboardPage() {
       .catch(() => setCreatorCount(null));
 
     // Fetch brands count
-    fetch("http://localhost:5001/api/brand-profiles/all")
+    fetch(`${process.env.NEXT_PUBLIC_API_URL || 'https://rwew.onrender.com/api'}/brand-profiles/all`)
       .then(res => res.json())
       .then(data => {
         if (Array.isArray(data)) {

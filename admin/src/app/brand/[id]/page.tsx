@@ -33,7 +33,7 @@ export default function BrandDetailPage() {
       setLoading(true);
       setError(null);
       try {
-        const res = await fetch(`http://localhost:5001/api/brand-profiles/all`);
+        const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL || 'https://rwew.onrender.com/api'}/brand-profiles/all`);
         if (!res.ok) throw new Error("Failed to fetch brands");
         const data = await res.json();
         const found = (data.data || []).find((b: Brand) => b._id === id);
@@ -66,7 +66,7 @@ export default function BrandDetailPage() {
     setDeactivateError(null);
     try {
       const token = localStorage.getItem('token');
-      const res = await fetch(`http://localhost:5001/api/brand-profiles/${brand._id}/deactivate`, {
+      const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL || 'https://rwew.onrender.com/api'}/brand-profiles/${brand._id}/deactivate`, {
         method: 'PUT',
         headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
       });
@@ -85,7 +85,7 @@ export default function BrandDetailPage() {
     setReactivateError(null);
     try {
       const token = localStorage.getItem('token');
-      const res = await fetch(`http://localhost:5001/api/brand-profiles/${brand._id}/reactivate`, {
+      const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL || 'https://rwew.onrender.com/api'}/brand-profiles/${brand._id}/reactivate`, {
         method: 'PUT',
         headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
       });

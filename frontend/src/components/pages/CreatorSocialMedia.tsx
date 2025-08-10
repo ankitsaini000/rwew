@@ -37,7 +37,7 @@ const FacebookInstagramConnectButton = ({
     }
     
     // Redirect to Facebook auth with Instagram permission and token
-    const apiBaseUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5001';
+    const apiBaseUrl = process.env.NEXT_PUBLIC_API_URL || 'https://rwew.onrender.com/api';
     // Ensure we don't have duplicate /api in the URL
     const baseAuthUrl = apiBaseUrl.endsWith('/api') 
       ? `${apiBaseUrl}/social-media/facebook-instagram-auth`
@@ -102,7 +102,7 @@ const YouTubeConnectButton = ({
     }
     
     // Redirect to YouTube auth with token
-    const apiBaseUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5001';
+    const apiBaseUrl = process.env.NEXT_PUBLIC_API_URL || 'https://rwew.onrender.com/api';
     // Ensure we don't have duplicate /api in the URL
     const baseAuthUrl = apiBaseUrl.endsWith('/api') 
       ? `${apiBaseUrl}/social-media/youtube-auth`
@@ -167,7 +167,7 @@ const TwitterConnectButton = ({
     }
     
     // Redirect to Twitter auth with token
-    const apiBaseUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5001';
+    const apiBaseUrl = process.env.NEXT_PUBLIC_API_URL || 'https://rwew.onrender.com/api';
     // Ensure we don't have duplicate /api in the URL
     const baseAuthUrl = apiBaseUrl.endsWith('/api') 
       ? `${apiBaseUrl}/social-media/twitter-auth`
@@ -269,7 +269,7 @@ export const CreatorSocialMedia = () => {
   // Fetch connected accounts on mount and after any connect
   const fetchConnectedAccounts = async () => {
     try {
-      const apiBaseUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5001';
+      const apiBaseUrl = process.env.NEXT_PUBLIC_API_URL || 'https://rwew.onrender.com/api';
       const baseApiUrl = apiBaseUrl.endsWith('/api') 
         ? `${apiBaseUrl}/social-media/accounts`
         : `${apiBaseUrl}/api/social-media/accounts`;

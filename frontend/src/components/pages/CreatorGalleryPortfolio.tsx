@@ -606,7 +606,7 @@ export const CreatorGalleryPortfolio = () => {
       toast('Testing direct backend connection...');
       
       // Try a simpler endpoint first to verify connectivity
-      const testResponse = await fetch('http://localhost:5001/api/creators/test', {
+      const testResponse = await fetch(`${process.env.NEXT_PUBLIC_API_URL || 'https://rwew.onrender.com/api'}/creators/test`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -674,7 +674,7 @@ export const CreatorGalleryPortfolio = () => {
         ]
       };
       
-      const response = await fetch('http://localhost:5001/api/creators/gallery', {
+      const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL || 'https://rwew.onrender.com/api'}/creators/gallery`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -715,7 +715,7 @@ export const CreatorGalleryPortfolio = () => {
       
       toast('Testing gallery storage endpoint...');
       
-      const testResponse = await fetch('http://localhost:5001/api/creators/test-gallery', {
+      const testResponse = await fetch(`${process.env.NEXT_PUBLIC_API_URL || 'https://rwew.onrender.com/api'}/creators/test-gallery`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',

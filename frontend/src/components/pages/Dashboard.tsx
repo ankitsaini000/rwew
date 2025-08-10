@@ -125,6 +125,48 @@ export function Dashboard() {
   const [recommendations, setRecommendations] = useState<any[]>([]);
   const [recommendationsLoading, setRecommendationsLoading] = useState(false);
 
+  // Helpers to compute rating/reviewCount robustly
+  const toNumber = (value: any): number => {
+    if (typeof value === 'number') return value;
+    if (typeof value === 'string') {
+      const parsed = parseFloat(value);
+      return isNaN(parsed) ? NaN : parsed;
+    }
+    return NaN;
+  };
+
+  const computeReviewCount = (creator: any): number => {
+    if (Array.isArray(creator?.reviews)) return creator.reviews.length;
+    const metricsCount = creator?.metrics?.ratings?.count;
+    if (typeof metricsCount === 'number') return metricsCount;
+    if (typeof creator?.reviewCount === 'number') return creator.reviewCount;
+    return 0;
+  };
+
+  const computeRating = (creator: any): number => {
+    const explicit = toNumber(creator?.rating);
+    if (!isNaN(explicit) && explicit > 0) return explicit;
+
+    const metricsAvg = toNumber(creator?.metrics?.ratings?.average);
+    if (!isNaN(metricsAvg) && metricsAvg > 0) return metricsAvg;
+
+    // Try alternative average fields
+    const altAvg = toNumber(creator?.metrics?.averageRating ?? creator?.averageRating);
+    if (!isNaN(altAvg) && altAvg > 0) return altAvg;
+
+    // Compute from reviews array if available
+    if (Array.isArray(creator?.reviews) && creator.reviews.length > 0) {
+      const withNumbers = creator.reviews
+        .map((r: any) => toNumber(r?.rating))
+        .filter((n: number) => !isNaN(n));
+      if (withNumbers.length > 0) {
+        const sum = withNumbers.reduce((acc: number, n: number) => acc + n, 0);
+        return sum / withNumbers.length;
+      }
+    }
+    return 0;
+  };
+
   // Profiles You May Like State
   const [profilesYouMayLike, setProfilesYouMayLike] = useState<any[]>([]);
   const [profilesYouMayLikeLoading, setProfilesYouMayLikeLoading] = useState(false);
@@ -153,12 +195,17 @@ export function Dashboard() {
       const creators = await getPublishedCreators();
       console.log('🎯 Dashboard Debug - Received creators from getPublishedCreators:', creators);
       
-      // Filter only published profiles
-      const publishedCreators = creators.filter((creator: any) => 
-        creator.status === 'published' && 
-        creator.publishInfo?.isPublished === true &&
-        creator.isActive !== false
-      );
+      // Filter only active profiles. Backend returns published items and may omit fields,
+      // so treat missing publish fields as published while excluding deactivated ones.
+      const publishedCreators = creators.filter((creator: any) => {
+        const isActive = creator?.isActive !== false;
+        const statusOk = creator?.status ? creator.status === 'published' : true;
+        const publishInfoOk =
+          creator?.publishInfo && typeof creator.publishInfo.isPublished !== 'undefined'
+            ? creator.publishInfo.isPublished === true
+            : true;
+        return isActive && statusOk && publishInfoOk;
+      });
       
       publishedCreators.forEach((creator: any, index: number) => {
         console.log(`🎯 Dashboard Debug - Published Creator ${index + 1}:`, {
@@ -324,12 +371,16 @@ export function Dashboard() {
       
       getDashboardRecommendations(recent)
         .then(creators => {
-          // Filter only published profiles
-          const publishedCreators = creators.filter((creator: any) => 
-            creator.status === 'published' && 
-            creator.publishInfo?.isPublished === true &&
-            creator.isActive !== false
-          );
+          // Filter only active profiles; treat missing publish fields as published
+          const publishedCreators = creators.filter((creator: any) => {
+            const isActive = creator?.isActive !== false;
+            const statusOk = creator?.status ? creator.status === 'published' : true;
+            const publishInfoOk =
+              creator?.publishInfo && typeof creator.publishInfo.isPublished !== 'undefined'
+                ? creator.publishInfo.isPublished === true
+                : true;
+            return isActive && statusOk && publishInfoOk;
+          });
           setRecommendations(publishedCreators);
         })
         .catch(() => setRecommendations([]))
@@ -338,12 +389,15 @@ export function Dashboard() {
       setProfilesYouMayLikeLoading(true);
       getProfilesYouMayLike()
         .then(creators => {
-          // Filter only published profiles
-          const publishedCreators = creators.filter((creator: any) => 
-            creator.status === 'published' && 
-            creator.publishInfo?.isPublished === true &&
-            creator.isActive !== false
-          );
+          const publishedCreators = creators.filter((creator: any) => {
+            const isActive = creator?.isActive !== false;
+            const statusOk = creator?.status ? creator.status === 'published' : true;
+            const publishInfoOk =
+              creator?.publishInfo && typeof creator.publishInfo.isPublished !== 'undefined'
+                ? creator.publishInfo.isPublished === true
+                : true;
+            return isActive && statusOk && publishInfoOk;
+          });
           setProfilesYouMayLike(publishedCreators);
         })
         .catch(() => setProfilesYouMayLike([]))
@@ -371,12 +425,16 @@ export function Dashboard() {
           const topTags = tags.slice(0, 3).map((t: {tag: string, count: number}) => t.tag);
           getFilteredCreators({ tags: topTags, limit: 6 })
             .then(result => {
-              // Filter only published profiles
-              const publishedCreators = result.creators.filter((creator: any) => 
-                creator.status === 'published' && 
-                creator.publishInfo?.isPublished === true &&
-                creator.isActive !== false
-              );
+              // Filter only active profiles; treat missing publish fields as published
+              const publishedCreators = result.creators.filter((creator: any) => {
+                const isActive = creator?.isActive !== false;
+                const statusOk = creator?.status ? creator.status === 'published' : true;
+                const publishInfoOk =
+                  creator?.publishInfo && typeof creator.publishInfo.isPublished !== 'undefined'
+                    ? creator.publishInfo.isPublished === true
+                    : true;
+                return isActive && statusOk && publishInfoOk;
+              });
               setTagBasedRecommendations(publishedCreators);
             })
             .catch(() => setTagBasedRecommendations([]));
@@ -387,12 +445,15 @@ export function Dashboard() {
           const topContentTypes = contentTypes.slice(0, 3).map((ct: {contentType: string, count: number}) => ct.contentType);
           getFilteredCreators({ contentTypes: topContentTypes, limit: 6 })
             .then(result => {
-              // Filter only published profiles
-              const publishedCreators = result.creators.filter((creator: any) => 
-                creator.status === 'published' && 
-                creator.publishInfo?.isPublished === true &&
-                creator.isActive !== false
-              );
+              const publishedCreators = result.creators.filter((creator: any) => {
+                const isActive = creator?.isActive !== false;
+                const statusOk = creator?.status ? creator.status === 'published' : true;
+                const publishInfoOk =
+                  creator?.publishInfo && typeof creator.publishInfo.isPublished !== 'undefined'
+                    ? creator.publishInfo.isPublished === true
+                    : true;
+                return isActive && statusOk && publishInfoOk;
+              });
               setContentTypeBasedRecommendations(publishedCreators);
             })
             .catch(() => setContentTypeBasedRecommendations([]));
@@ -404,12 +465,16 @@ export function Dashboard() {
       
       getBestCreatorsForBrand()
         .then(creators => {
-          // Filter only published profiles
-          const publishedCreators = creators.filter((creator: any) => 
-            creator.status === 'published' && 
-            creator.publishInfo?.isPublished === true &&
-            creator.isActive !== false
-          );
+          // Filter only active profiles (treat missing publish fields as published)
+          const publishedCreators = creators.filter((creator: any) => {
+            const isActive = creator?.isActive !== false;
+            const statusOk = creator?.status ? creator.status === 'published' : true;
+            const publishInfoOk =
+              creator?.publishInfo && typeof creator.publishInfo.isPublished !== 'undefined'
+                ? creator.publishInfo.isPublished === true
+                : true;
+            return isActive && statusOk && publishInfoOk;
+          });
           setBestCreators(publishedCreators);
         })
         .catch(() => setBestCreators([]))
@@ -444,12 +509,16 @@ export function Dashboard() {
           } else {
             // Fallback: Use general published creators as recommendations
             return getPublishedCreators().then(generalCreators => {
-              // Filter only published profiles and shuffle
-              const publishedCreators = generalCreators.filter((creator: any) => 
-                creator.status === 'published' && 
-                creator.publishInfo?.isPublished === true &&
-                creator.isActive !== false
-              );
+              // Filter only active profiles and shuffle (treat missing publish fields as published)
+              const publishedCreators = generalCreators.filter((creator: any) => {
+                const isActive = creator?.isActive !== false;
+                const statusOk = creator?.status ? creator.status === 'published' : true;
+                const publishInfoOk =
+                  creator?.publishInfo && typeof creator.publishInfo.isPublished !== 'undefined'
+                    ? creator.publishInfo.isPublished === true
+                    : true;
+                return isActive && statusOk && publishInfoOk;
+              });
               const shuffled = publishedCreators.sort(() => 0.5 - Math.random());
               setBestCreators(shuffled.slice(0, 6));
             });
@@ -459,12 +528,16 @@ export function Dashboard() {
           // If brand-specific API fails, use general published creators
           getPublishedCreators()
             .then(generalCreators => {
-              // Filter only published profiles and shuffle
-              const publishedCreators = generalCreators.filter((creator: any) => 
-                creator.status === 'published' && 
-                creator.publishInfo?.isPublished === true &&
-                creator.isActive !== false
-              );
+              // Filter only active profiles and shuffle (treat missing publish fields as published)
+              const publishedCreators = generalCreators.filter((creator: any) => {
+                const isActive = creator?.isActive !== false;
+                const statusOk = creator?.status ? creator.status === 'published' : true;
+                const publishInfoOk =
+                  creator?.publishInfo && typeof creator.publishInfo.isPublished !== 'undefined'
+                    ? creator.publishInfo.isPublished === true
+                    : true;
+                return isActive && statusOk && publishInfoOk;
+              });
               const shuffled = publishedCreators.sort(() => 0.5 - Math.random());
               setBestCreators(shuffled.slice(0, 6));
             })
@@ -869,12 +942,16 @@ export function Dashboard() {
           availableContentTypes.slice(0, 3).map(ct => ct.contentType) : []
       });
       
-      // Filter only published profiles
-      const publishedCreators = result.creators.filter((creator: any) => 
-        creator.status === 'published' && 
-        creator.publishInfo?.isPublished === true &&
-        creator.isActive !== false
-      );
+      // Filter only active profiles (missing publish fields are treated as published)
+      const publishedCreators = result.creators.filter((creator: any) => {
+        const isActive = creator?.isActive !== false;
+        const statusOk = creator?.status ? creator.status === 'published' : true;
+        const publishInfoOk =
+          creator?.publishInfo && typeof creator.publishInfo.isPublished !== 'undefined'
+            ? creator.publishInfo.isPublished === true
+            : true;
+        return isActive && statusOk && publishInfoOk;
+      });
       
       setSearchBasedRecommendations(publishedCreators);
     } catch (error) {
@@ -1164,7 +1241,7 @@ export function Dashboard() {
                   </button>
                 </div>
                 <button 
-                  className="text-purple-600 text-sm font-medium"
+                  className="text-purple-600 text-[10px] sm:text-xs font-medium"
                   onClick={() => router.push('/find-creators')}
                 >
                   View all
@@ -1227,7 +1304,7 @@ export function Dashboard() {
           <div className="relative">
             {/* Header with Navigation */}
             <div className="flex items-center justify-between mb-6">
-              <h2 className="text-xl font-semibold text-gray-900">Categories</h2>
+              <h2 className="text-sm sm:text-xl font-semibold text-gray-900">Categories</h2>
               <div className="flex items-center gap-4">
                 <div className="flex gap-2">
                   <button className="category-prev p-1.5 rounded-lg bg-gray-50 hover:bg-gray-100 disabled:opacity-50 disabled:cursor-not-allowed">
@@ -1238,7 +1315,7 @@ export function Dashboard() {
                   </button>
                 </div>
                 <button 
-                  className="text-purple-600 text-sm font-medium"
+                  className="text-purple-600 text-[10px] sm:text-xs font-medium"
                   onClick={() => router.push('/categories')}
                 >
                   View all
@@ -1296,7 +1373,7 @@ export function Dashboard() {
           {isAuthenticated && user?.role === 'brand' && recommendations.length > 0 && (
             <section className="mb-10">
               <div className="flex items-center justify-between mb-6">
-                <h2 className="text-xl font-semibold text-gray-900">What you might be looking for</h2>
+                <h2 className="text-sm sm:text-xl font-semibold text-gray-900">What you might be looking for</h2>
                 <div className="flex items-center gap-4">
                   <div className="flex gap-2">
                     <button className="recommendations-prev p-1.5 rounded-lg bg-gray-50 hover:bg-gray-100 disabled:opacity-50 disabled:cursor-not-allowed">
@@ -1306,7 +1383,7 @@ export function Dashboard() {
                       <ChevronRight className="w-4 h-4 text-gray-600" />
                     </button>
                   </div>
-                  <button className="text-purple-600 text-sm font-medium">View all</button>
+                  <button className="text-purple-600 text-[10px] sm:text-xs font-medium">View all</button>
                 </div>
               </div>
               <div className="relative">
@@ -1331,12 +1408,19 @@ export function Dashboard() {
                         username={creator.username || creator.personalInfo?.username || ''}
                         fullName={creator.name || creator.personalInfo?.username || ''}
                         avatar={creator.avatar || creator.personalInfo?.profileImage}
-                        categories={creator.professionalInfo?.categories || []}
+                        categories={Array.isArray(creator.professionalInfo?.categories) && creator.professionalInfo.categories.length > 0
+                          ? creator.professionalInfo.categories
+                          : (creator.category ? [creator.category] : (Array.isArray(creator.categories) ? creator.categories : []))}
                         // level={creator.level || creator.professionalInfo?.title || ''}
-                        description={creator.description || creator.descriptionFaq?.briefDescription || ''}
-                        rating={creator.rating || creator.metrics?.ratings?.average || 0}
-                        reviewCount={Array.isArray(creator.reviews) ? creator.reviews.length : (creator.reviews || creator.metrics?.ratings?.count || 0)}
-                        startingPrice={creator.startingPrice || (creator.pricing?.basic?.price ? `₹${creator.pricing.basic.price}` : undefined)}
+                        description={creator.description || creator.descriptionFaq?.briefDescription || creator.personalInfo?.bio || creator.bio || ''}
+                        rating={computeRating(creator)}
+                        reviewCount={computeReviewCount(creator)}
+                        startingPrice={
+                          typeof creator?.startingPrice === 'number' ? creator.startingPrice :
+                          (typeof creator?.startingPrice === 'string' && creator.startingPrice.trim() ? creator.startingPrice :
+                            (typeof creator?.pricing?.standard?.price === 'number' ? creator.pricing.standard.price :
+                              (typeof creator?.pricing?.basic?.price === 'number' ? creator.pricing.basic.price : undefined)))
+                        }
                         isLiked={false}
                         title={creator.title || creator.professionalInfo?.title || ''}
                         completedProjects={creator.metrics?.profileMetrics?.projectsCompleted || creator.metrics?.completedProjects || 0}
@@ -1361,7 +1445,7 @@ export function Dashboard() {
           {isAuthenticated && user?.role === 'brand' && bestCreators.length > 0 && (
             <section className="mb-10">
               <div className="flex items-center justify-between mb-6">
-                <h2 className="text-xl font-semibold text-gray-900">Best creators for your brand</h2>
+                <h2 className="text-sm sm:text-xl font-semibold text-gray-900">Best creators for your brand</h2>
                 <div className="flex items-center gap-4">
                   <div className="flex gap-2">
                     <button className="best-creators-prev p-1.5 rounded-lg bg-gray-50 hover:bg-gray-100 disabled:opacity-50 disabled:cursor-not-allowed">
@@ -1371,7 +1455,7 @@ export function Dashboard() {
                       <ChevronRight className="w-4 h-4 text-gray-600" />
                     </button>
                   </div>
-                  <button className="text-purple-600 text-sm font-medium">View all</button>
+                  <button className="text-purple-600 text-[10px] sm:text-xs font-medium">View all</button>
                 </div>
               </div>
               <div className="relative">
@@ -1396,12 +1480,19 @@ export function Dashboard() {
                         username={creator.username || creator.personalInfo?.username || ''}
                         fullName={creator.name || creator.personalInfo?.username || ''}
                         avatar={creator.avatar || creator.personalInfo?.profileImage}
-                        categories={creator.professionalInfo?.categories || []}
+                        categories={Array.isArray(creator.professionalInfo?.categories) && creator.professionalInfo.categories.length > 0
+                          ? creator.professionalInfo.categories
+                          : (creator.category ? [creator.category] : (Array.isArray(creator.categories) ? creator.categories : []))}
                         // level={creator.level || creator.professionalInfo?.title || ''}
-                        description={creator.description || creator.descriptionFaq?.briefDescription || ''}
-                        rating={creator.rating || creator.metrics?.ratings?.average || 0}
-                        reviewCount={Array.isArray(creator.reviews) ? creator.reviews.length : (creator.reviews || creator.metrics?.ratings?.count || 0)}
-                        startingPrice={creator.startingPrice || (creator.pricing?.basic?.price ? `₹${creator.pricing.basic.price}` : undefined)}
+                        description={creator.description || creator.descriptionFaq?.briefDescription || creator.personalInfo?.bio || creator.bio || ''}
+                        rating={computeRating(creator)}
+                        reviewCount={computeReviewCount(creator)}
+                        startingPrice={
+                          typeof creator?.startingPrice === 'number' ? creator.startingPrice :
+                          (typeof creator?.startingPrice === 'string' && creator.startingPrice.trim() ? creator.startingPrice :
+                            (typeof creator?.pricing?.standard?.price === 'number' ? creator.pricing.standard.price :
+                              (typeof creator?.pricing?.basic?.price === 'number' ? creator.pricing.basic.price : undefined)))
+                        }
                         isLiked={false}
                         title={creator.title || creator.professionalInfo?.title || ''}
                         completedProjects={creator.metrics?.profileMetrics?.projectsCompleted || creator.metrics?.completedProjects || 0}
@@ -1427,7 +1518,7 @@ export function Dashboard() {
           {isAuthenticated && user?.role === 'brand' && tagBasedRecommendations.length > 0 && (
             <section className="mb-10">
               <div className="flex items-center justify-between mb-6">
-                <h2 className="text-xl font-semibold text-gray-900">
+                <h2 className="text-sm sm:text-xl font-semibold text-gray-900">
                   Trending in {availableTags.slice(0, 3).map(t => t.tag).join(', ')}
                 </h2>
                 <div className="flex items-center gap-4">
@@ -1439,7 +1530,7 @@ export function Dashboard() {
                       <ChevronRight className="w-4 h-4 text-gray-600" />
                     </button>
                   </div>
-                  <Link href="/find-creators" className="text-purple-600 text-sm font-medium">View all</Link>
+                  <Link href="/find-creators" className="text-purple-600 text-[10px] sm:text-xs font-medium">View all</Link>
                 </div>
               </div>
               <div className="relative">
@@ -1464,11 +1555,18 @@ export function Dashboard() {
                         username={creator.username || creator.personalInfo?.username || ''}
                         fullName={creator.name || creator.personalInfo?.username || ''}
                         avatar={creator.avatar || creator.personalInfo?.profileImage}
-                        categories={creator.professionalInfo?.categories || []}
-                        description={creator.description || creator.descriptionFaq?.briefDescription || ''}
-                        rating={creator.rating || creator.metrics?.ratings?.average || 0}
-                        reviewCount={Array.isArray(creator.reviews) ? creator.reviews.length : (creator.reviews || creator.metrics?.ratings?.count || 0)}
-                        startingPrice={creator.startingPrice || (creator.pricing?.basic?.price ? `₹${creator.pricing.basic.price}` : undefined)}
+                        categories={Array.isArray(creator.professionalInfo?.categories) && creator.professionalInfo.categories.length > 0
+                          ? creator.professionalInfo.categories
+                          : (creator.category ? [creator.category] : (Array.isArray(creator.categories) ? creator.categories : []))}
+                        description={creator.description || creator.descriptionFaq?.briefDescription || creator.personalInfo?.bio || creator.bio || ''}
+                        rating={computeRating(creator)}
+                        reviewCount={computeReviewCount(creator)}
+                        startingPrice={
+                          typeof creator?.startingPrice === 'number' ? creator.startingPrice :
+                          (typeof creator?.startingPrice === 'string' && creator.startingPrice.trim() ? creator.startingPrice :
+                            (typeof creator?.pricing?.standard?.price === 'number' ? creator.pricing.standard.price :
+                              (typeof creator?.pricing?.basic?.price === 'number' ? creator.pricing.basic.price : undefined)))
+                        }
                         isLiked={false}
                         title={creator.title || creator.professionalInfo?.title || ''}
                         completedProjects={creator.metrics?.profileMetrics?.projectsCompleted || creator.metrics?.completedProjects || 0}
@@ -1491,7 +1589,7 @@ export function Dashboard() {
           {isAuthenticated && user?.role === 'brand' && contentTypeBasedRecommendations.length > 0 && (
             <section className="mb-10">
               <div className="flex items-center justify-between mb-6">
-                <h2 className="text-xl font-semibold text-gray-900">
+                <h2 className="text-sm sm:text-xl font-semibold text-gray-900">
                   Popular {availableContentTypes.slice(0, 3).map(ct => ct.contentType).join(', ')} Creators
                 </h2>
                 <div className="flex items-center gap-4">
@@ -1503,7 +1601,7 @@ export function Dashboard() {
                       <ChevronRight className="w-4 h-4 text-gray-600" />
                     </button>
                   </div>
-                  <Link href="/find-creators" className="text-purple-600 text-sm font-medium">View all</Link>
+                  <Link href="/find-creators" className="text-purple-600 text-[10px] sm:text-xs font-medium">View all</Link>
                 </div>
               </div>
               <div className="relative">
@@ -1528,11 +1626,18 @@ export function Dashboard() {
                         username={creator.username || creator.personalInfo?.username || ''}
                         fullName={creator.name || creator.personalInfo?.username || ''}
                         avatar={creator.avatar || creator.personalInfo?.profileImage}
-                        categories={creator.professionalInfo?.categories || []}
-                        description={creator.description || creator.descriptionFaq?.briefDescription || ''}
-                        rating={creator.rating || creator.metrics?.ratings?.average || 0}
-                        reviewCount={Array.isArray(creator.reviews) ? creator.reviews.length : (creator.reviews || creator.metrics?.ratings?.count || 0)}
-                        startingPrice={creator.startingPrice || (creator.pricing?.basic?.price ? `₹${creator.pricing.basic.price}` : undefined)}
+                        categories={Array.isArray(creator.professionalInfo?.categories) && creator.professionalInfo.categories.length > 0
+                          ? creator.professionalInfo.categories
+                          : (creator.category ? [creator.category] : (Array.isArray(creator.categories) ? creator.categories : []))}
+                        description={creator.description || creator.descriptionFaq?.briefDescription || creator.personalInfo?.bio || creator.bio || ''}
+                        rating={computeRating(creator)}
+                        reviewCount={computeReviewCount(creator)}
+                        startingPrice={
+                          typeof creator?.startingPrice === 'number' ? creator.startingPrice :
+                          (typeof creator?.startingPrice === 'string' && creator.startingPrice.trim() ? creator.startingPrice :
+                            (typeof creator?.pricing?.standard?.price === 'number' ? creator.pricing.standard.price :
+                              (typeof creator?.pricing?.basic?.price === 'number' ? creator.pricing.basic.price : undefined)))
+                        }
                         isLiked={false}
                         title={creator.title || creator.professionalInfo?.title || ''}
                         completedProjects={creator.metrics?.profileMetrics?.projectsCompleted || creator.metrics?.completedProjects || 0}
@@ -1555,7 +1660,7 @@ export function Dashboard() {
           {isAuthenticated && user?.role === 'brand' && searchBasedRecommendations.length > 0 && (
             <section className="mb-10">
               <div className="flex items-center justify-between mb-6">
-                <h2 className="text-xl font-semibold text-gray-900">
+                <h2 className="text-sm sm:text-xl font-semibold text-gray-900">
                   Similar to "{searchHistory[0] || 'your search'}"
                 </h2>
                 <div className="flex items-center gap-4">
@@ -1567,7 +1672,7 @@ export function Dashboard() {
                       <ChevronRight className="w-4 h-4 text-gray-600" />
                     </button>
                   </div>
-                  <Link href="/find-creators" className="text-purple-600 text-sm font-medium">View all</Link>
+                  <Link href="/find-creators" className="text-purple-600 text-[10px] sm:text-xs font-medium">View all</Link>
                 </div>
               </div>
               <div className="relative">
@@ -1593,10 +1698,15 @@ export function Dashboard() {
                         fullName={creator.name || creator.personalInfo?.username || ''}
                         avatar={creator.avatar || creator.personalInfo?.profileImage}
                         categories={creator.professionalInfo?.categories || []}
-                        description={creator.description || creator.descriptionFaq?.briefDescription || ''}
-                        rating={creator.rating || creator.metrics?.ratings?.average || 0}
-                        reviewCount={Array.isArray(creator.reviews) ? creator.reviews.length : (creator.reviews || creator.metrics?.ratings?.count || 0)}
-                        startingPrice={creator.startingPrice || (creator.pricing?.basic?.price ? `₹${creator.pricing.basic.price}` : undefined)}
+                        description={creator.description || creator.descriptionFaq?.briefDescription || creator.personalInfo?.bio || creator.bio || ''}
+                        rating={(creator.metrics?.ratings?.average ?? creator.rating ?? 0)}
+                        reviewCount={(Array.isArray(creator.reviews) ? creator.reviews.length : (typeof creator.metrics?.ratings?.count === 'number' ? creator.metrics.ratings.count : (typeof creator.reviewCount === 'number' ? creator.reviewCount : 0)))}
+                        startingPrice={
+                          typeof creator?.startingPrice === 'number' ? creator.startingPrice :
+                          (typeof creator?.startingPrice === 'string' && creator.startingPrice.trim() ? creator.startingPrice :
+                            (typeof creator?.pricing?.standard?.price === 'number' ? creator.pricing.standard.price :
+                              (typeof creator?.pricing?.basic?.price === 'number' ? creator.pricing.basic.price : undefined)))
+                        }
                         isLiked={false}
                         title={creator.title || creator.professionalInfo?.title || ''}
                         completedProjects={creator.metrics?.profileMetrics?.projectsCompleted || creator.metrics?.completedProjects || 0}
@@ -1619,7 +1729,7 @@ export function Dashboard() {
           {isAuthenticated && user?.role === 'brand' && recentSearches.length > 0 && (
             <section className="mb-10">
               <div className="flex items-center justify-between mb-6">
-                <h2 className="text-xl font-semibold text-gray-900">Recent Searches</h2>
+                <h2 className="text-sm sm:text-xl font-semibold text-gray-900">Recent Searches</h2>
                 <button 
                   onClick={async () => {
                     try {
@@ -1660,7 +1770,7 @@ export function Dashboard() {
           {isAuthenticated && user?.role === 'brand' && (
             <section className="mb-10">
               <div className="flex items-center justify-between mb-6">
-                <h2 className="text-xl font-semibold text-gray-900">Best Match For You</h2>
+                <h2 className="text-sm sm:text-xl font-semibold text-gray-900">Best Match For You</h2>
                 <div className="flex items-center gap-4">
                   <div className="flex gap-2">
                     <button className="best-matches-prev p-1.5 rounded-lg bg-gray-50 hover:bg-gray-100 disabled:opacity-50 disabled:cursor-not-allowed">
@@ -1670,7 +1780,7 @@ export function Dashboard() {
                       <ChevronRight className="w-4 h-4 text-gray-600" />
                     </button>
                   </div>
-                  <button className="text-purple-600 text-sm font-medium">View all</button>
+                  <button className="text-purple-600 text-[10px] sm:text-xs font-medium">View all</button>
                 </div>
               </div>
               <div className="relative">
@@ -1771,8 +1881,8 @@ export function Dashboard() {
                         categories={creator.professionalInfo?.categories || []}
                         level={creator.level || creator.professionalInfo?.title || ''}
                         description={creator.description || creator.descriptionFaq?.briefDescription || ''}
-                        rating={creator.rating || creator.metrics?.ratings?.average || 0}
-                        reviewCount={creator.reviews || creator.metrics?.ratings?.count || 0}
+                        rating={(creator.metrics?.ratings?.average ?? creator.rating ?? 0)}
+                        reviewCount={(Array.isArray(creator.reviews) ? creator.reviews.length : (typeof creator.metrics?.ratings?.count === 'number' ? creator.metrics.ratings.count : (typeof creator.reviewCount === 'number' ? creator.reviewCount : 0)))}
                         startingPrice={creator.startingPrice || (creator.pricing?.basic?.price ? `₹${creator.pricing.basic.price}` : undefined)}
                         isLiked={false}
                         title={creator.title || creator.professionalInfo?.title || ''}
