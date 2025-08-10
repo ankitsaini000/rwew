@@ -48,7 +48,7 @@ export default function MessagesPage() {
       setErrorConvos(null);
       try {
         const token = typeof window !== 'undefined' ? localStorage.getItem('token') : null;
-        const res = await fetch("http://localhost:5001/api/messages/conversations", {
+        const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL || 'https://rwew.onrender.com/api'}/messages/conversations`, {
           headers: token ? { Authorization: `Bearer ${token}` } : {},
         });
         if (!res.ok) throw new Error("Failed to fetch conversations");

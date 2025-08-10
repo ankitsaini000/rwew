@@ -221,7 +221,7 @@ export const DashboardLayout = ({ children }: { children: React.ReactNode }) => 
             try {
               const token = localStorage.getItem('token');
               if (token) {
-                const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000/api'}/users/profile`, {
+                const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL || 'https://rwew.onrender.com/api'}/users/profile`, {
                   headers: {
                     'Authorization': `Bearer ${token}`
                   }
@@ -259,7 +259,7 @@ export const DashboardLayout = ({ children }: { children: React.ReactNode }) => 
       console.log('fetchUnreadCount called');
       const token = localStorage.getItem('token');
       if (!token) return;
-      const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5001/api';
+      const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || 'https://rwew.onrender.com/api';
       try {
         const res = await fetch(`${API_BASE_URL}/messages/conversations`, {
           headers: { 'Authorization': `Bearer ${token}` }

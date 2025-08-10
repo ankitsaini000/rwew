@@ -4,6 +4,7 @@ import { useCreatorStore } from '@/store/creatorStore';
 import { toast } from 'react-hot-toast';
 import { useInView } from 'react-intersection-observer';
 import axios from 'axios';
+import { API_BASE_URL } from '@/utils/auth';
 import { useEffect, useRef } from 'react';
 import Link from 'next/link';
 
@@ -212,14 +213,16 @@ const CreatorCard: React.FC<CreatorCardProps> = ({
       hasSentImpression.current = true;
       const token = localStorage.getItem('token');
       if (token) {
-        axios.post(
-          'http://localhost:5001/api/creators/dashboard-impression',
-          { creatorId: id },
-          { headers: { Authorization: `Bearer ${token}` } }
-        ).catch((err) => {
-          // Optionally log or handle error
-          console.error('Failed to send impression:', err);
-        });
+        axios
+          .post(
+            `${API_BASE_URL}/creators/dashboard-impression`,
+            { creatorId: id },
+            { headers: { Authorization: `Bearer ${token}` } }
+          )
+          .catch((err) => {
+            // Optionally log or handle error
+            console.error('Failed to send impression:', err);
+          });
       }
     }
   }, [inView, id]);

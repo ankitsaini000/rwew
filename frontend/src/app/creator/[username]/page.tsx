@@ -68,7 +68,7 @@ import Link from 'next/link';
 
 
 // Define the API base URL
-const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5001';
+const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || 'https://rwew.onrender.com/api';
 
 export default function CreatorProfilePage({ params }: { params: { username: string } }) {
   const { username } = params;
