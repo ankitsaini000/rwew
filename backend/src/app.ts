@@ -13,7 +13,7 @@ const app = express();
 
 // Middleware
 app.use(cors({
-  origin: ['http://localhost:3000', 'http://localhost:3001'],
+  origin: ['http://localhost:3000', 'http://localhost:3001', 'https://row-eight-weld.vercel.app'],
   credentials: true,
 }));
 app.use(express.json());
@@ -30,4 +30,4 @@ app.use('/api/ollama', ollamaRoutes);
 app.use('/api/creator-bank-accounts', creatorBankAccountRoutes);
 app.use('/api/search-history', searchHistoryRoutes);
 
-export default app; 
+export default app;

@@ -10,7 +10,7 @@ export function useSocket() {
     if (!token) return;
 
     // Initialize socket connection
-    socketRef.current = io(process.env.NEXT_PUBLIC_SOCKET_URL || 'http://localhost:5001', {
+    socketRef.current = io(process.env.NEXT_PUBLIC_SOCKET_URL || 'https://rwew.onrender.com', {
       auth: {
         token
       }
@@ -34,4 +34,4 @@ export function useSocket() {
   }, [token]);
 
   return socketRef.current;
-} 
+}

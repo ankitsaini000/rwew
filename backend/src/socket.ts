@@ -14,7 +14,7 @@ export const initializeSocket = (httpServer: HTTPServer) => {
   
   io = new Server(httpServer, {
     cors: {
-      origin: process.env.FRONTEND_URL || 'http://localhost:3000',
+      origin: process.env.FRONTEND_URL || 'https://row-eight-weld.vercel.app',
       methods: ['GET', 'POST']
     }
   });
@@ -121,4 +121,4 @@ export const getIO = () => {
     throw new Error('Socket.IO not initialized');
   }
   return io;
-}; 
+};

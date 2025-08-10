@@ -113,7 +113,7 @@ function RegisterForm() {
   };
 
   const handleFacebookLogin = () => {
-    window.location.href = 'http://localhost:5001/api/auth/facebook';
+    window.location.href = 'https://rwew.onrender.com/api/auth/facebook';
   };
 
   return (

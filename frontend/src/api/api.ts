@@ -1,4 +1,4 @@
-const API_URL = process.env.REACT_APP_API_URL || 'http://localhost:5001/api';
+const API_URL = process.env.REACT_APP_API_URL || 'https://rwew.onrender.com/api';
 
 // Around line 1214 where the createNewCreatorProfile function is defined
 export const createNewCreatorProfile = async (profileData: any) => {

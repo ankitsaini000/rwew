@@ -64,7 +64,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
   const fetchUserData = async (authToken: string) => {
     try {
       setLoading(true);
-      const response = await fetch('http://localhost:5001/api/users/profile', {
+      const response = await fetch('https://rwew.onrender.com/api/users/profile', {
         headers: {
           'Authorization': `Bearer ${authToken}`
         }
@@ -252,7 +252,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
       }
       
       setLoading(true);
-      const response = await fetch('http://localhost:5001/api/users/profile', {
+      const response = await fetch('https://rwew.onrender.com/api/users/profile', {
         headers: {
           'Authorization': `Bearer ${authToken}`
         }

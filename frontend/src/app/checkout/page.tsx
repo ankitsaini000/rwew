@@ -25,7 +25,7 @@ import toast from 'react-hot-toast';
 import { createOrder, getCreatorDetailsForCheckout, updateApplicationStatus, getApplicationById, getOfferById } from '@/services/api';
 
 const RAZORPAY_KEY_ID = process.env.NEXT_PUBLIC_RAZORPAY_KEY_ID || 'rzp_test_Jlvb5wZpEue8k0';
-const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5001';
+const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || 'https://rwew.onrender.com';
 
 // Helper to upload multiple files to Cloudinary
 async function uploadFilesToCloudinary(files: FileList | File[]): Promise<string[]> {
@@ -425,7 +425,7 @@ const CheckoutContent = () => {
     const orderAmount = totalAmount * 100; // Razorpay expects paise
     try {
       // 1. Create order on backend
-      const res = await fetch('http://localhost:5001/api/payments/razorpay/order', {
+      const res = await fetch('https://rwew.onrender.com/api/payments/razorpay/order', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -457,7 +457,7 @@ const CheckoutContent = () => {
         order_id: order.id,
         handler: async function (response: any) {
           // 4. Verify payment signature
-          const verifyRes = await fetch('http://localhost:5001/api/payments/razorpay/verify', {
+          const verifyRes = await fetch('https://rwew.onrender.com/api/payments/razorpay/verify', {
             method: 'POST',
             headers: {
               'Content-Type': 'application/json',
@@ -1363,4 +1363,4 @@ const CheckoutPage = () => {
   );
 };
 
-export default CheckoutPage; 
+export default CheckoutPage;

@@ -3,7 +3,7 @@
 //     return [
 //       {
 //         source: '/api/:path*',
-//         destination: 'http://localhost:5001/api/:path*',
+//         destination: 'https://rwew.onrender.com/api/:path*',
 //       },
 //     ];
 //   },
@@ -38,7 +38,7 @@ const nextConfig = {
       return [
         {
           source: '/api/:path*',
-          destination: 'http://localhost:5001/api/:path*',
+          destination: 'https://rwew.onrender.com/api/:path*',
         },
       ];
     }

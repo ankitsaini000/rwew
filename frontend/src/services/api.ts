@@ -1086,7 +1086,7 @@ export const getCreatorByUsername = async (username: string) => {
       
       // Try direct backend call with the working endpoint
       try {
-        const directEndpoint = `http://localhost:5001/api/creators/creators/${username}`;
+        const directEndpoint = `https://rwew.onrender.com/api/creators/creators/${username}`;
         attemptedEndpoints.push(directEndpoint);
         console.log(`🔍 Trying direct backend call with working endpoint: ${directEndpoint}`);
         
@@ -1245,7 +1245,7 @@ export const getCreatorByUsername = async (username: string) => {
       
       // Try direct backend call with port 5001 as fallback
       try {
-        const directEndpoint = `http://localhost:5001/api/creators/${username}`;
+        const directEndpoint = `https://rwew.onrender.com/api/creators/${username}`;
         attemptedEndpoints.push(directEndpoint);
         console.log(`🔍 Trying direct backend call: ${directEndpoint}`);
         
@@ -3098,7 +3098,7 @@ export const createOrder = async (orderData: {
     console.log('Sending order data to backend:', requestData);
     
     // Make the actual API call to the backend
-    const response = await fetch('http://localhost:5001/api/orders', {
+    const response = await fetch('https://rwew.onrender.com/api/orders', {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
@@ -3435,7 +3435,7 @@ export const getOrderById = async (orderId: string) => {
     
     console.log('Fetching order details for order ID:', orderId);
     
-    const response = await fetch(`http://localhost:5001/api/orders/${orderId}`, {
+    const response = await fetch(`https://rwew.onrender.com/api/orders/${orderId}`, {
       method: 'GET',
       headers: {
         'Content-Type': 'application/json',
@@ -3793,7 +3793,7 @@ export const getBrandDashboardStats = async () => {
     
     // Try to fetch from dedicated endpoint (if backend implements it in the future)
     try {
-      const response = await fetch('http://localhost:5001/api/brands/dashboard-stats', {
+      const response = await fetch('https://rwew.onrender.com/api/brands/dashboard-stats', {
         method: 'GET',
         headers: {
           'Content-Type': 'application/json',

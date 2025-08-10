@@ -7,7 +7,7 @@ export const initializeSocket = (token: string): Socket => {
     return socket;
   }
 
-  const backendUrl = process.env.NEXT_PUBLIC_BACKEND_URL || 'http://localhost:5001';
+  const backendUrl = process.env.NEXT_PUBLIC_BACKEND_URL || 'https://rwew.onrender.com';
   
   socket = io(backendUrl, {
     auth: {
@@ -47,4 +47,4 @@ export const joinUserRoom = (userId: string): void => {
   if (socket) {
     socket.emit('join', { userId });
   }
-}; 
+};

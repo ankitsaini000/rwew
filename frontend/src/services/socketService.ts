@@ -1,6 +1,6 @@
 import { io, Socket } from 'socket.io-client';
 
-const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5001';
+const API_URL = process.env.NEXT_PUBLIC_API_URL || 'https://rwew.onrender.com';
 
 class SocketService {
   private socket: Socket | null = null;
@@ -97,4 +97,4 @@ class SocketService {
 }
 
 const socketService = new SocketService();
-export default socketService; 
+export default socketService;

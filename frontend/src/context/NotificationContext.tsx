@@ -58,7 +58,7 @@ export const NotificationProvider: React.FC<NotificationProviderProps> = ({ chil
       setLoading(true);
       setError(null);
 
-      const apiUrl = `${process.env.NEXT_PUBLIC_BACKEND_URL || 'http://localhost:5001'}/api/notifications`;
+      const apiUrl = `${process.env.NEXT_PUBLIC_BACKEND_URL || 'https://rwew.onrender.com'}/api/notifications`;
       console.log('Fetching notifications from:', apiUrl);
       console.log('Using token:', token.substring(0, 20) + '...');
 
@@ -98,7 +98,7 @@ export const NotificationProvider: React.FC<NotificationProviderProps> = ({ chil
 
     try {
       const response = await fetch(
-        `${process.env.NEXT_PUBLIC_BACKEND_URL || 'http://localhost:5001'}/api/notifications/${notificationId}/read`,
+        `${process.env.NEXT_PUBLIC_BACKEND_URL || 'https://rwew.onrender.com'}/api/notifications/${notificationId}/read`,
         {
           method: 'PUT',
           headers: {
@@ -132,7 +132,7 @@ export const NotificationProvider: React.FC<NotificationProviderProps> = ({ chil
 
     try {
       const response = await fetch(
-        `${process.env.NEXT_PUBLIC_BACKEND_URL || 'http://localhost:5001'}/api/notifications/read-all`,
+        `${process.env.NEXT_PUBLIC_BACKEND_URL || 'https://rwew.onrender.com'}/api/notifications/read-all`,
         {
           method: 'PUT',
           headers: {
@@ -190,4 +190,4 @@ export const useNotifications = (): NotificationContextType => {
     throw new Error('useNotifications must be used within a NotificationProvider');
   }
   return context;
-}; 
+};
