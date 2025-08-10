@@ -24,7 +24,7 @@
     "@types/twilio": "^3.19.2",
     "bcrypt": "^5.1.1",
     "class-variance-authority": "^0.7.1",
-    "cloudinary": "^2.6.1",
+    "cloudinary": "^2.7.0",
     "clsx": "^2.1.1",
     "cookie-session": "^2.1.0",
     "cors": "^2.8.5",
