@@ -1,4 +1,4 @@
-'use client';
+// Server Component
 
 import { Header } from '@/components/layout/Header'
 

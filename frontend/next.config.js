@@ -86,6 +86,8 @@ const nextConfig = {
       '@heroicons/react',
       'date-fns'
     ],
+    // External packages for server components
+    serverComponentsExternalPackages: ['mongoose'],
   },
   // API rewrites
   async rewrites() {

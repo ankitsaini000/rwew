@@ -1,11 +1,11 @@
 // This is a server component that renders the client component
-import dynamicImport from 'next/dynamic';
+import { lazy } from 'react';
+import dynamic from 'next/dynamic';
 
-// Dynamically import the client component with no SSR
-const MarketingPage = dynamicImport(
-  () => import('./page.client').then((mod) => mod.default),
+// Dynamically import the client component
+const MarketingPage = dynamic(
+  () => import('./page.client'),
   { 
-    ssr: false, // Disable server-side rendering for this component
     loading: () => (
       <div className="min-h-screen bg-gray-50">
         <div className="h-96 bg-gray-100 animate-pulse rounded-lg" />
@@ -16,7 +16,7 @@ const MarketingPage = dynamicImport(
 );
 
 // This ensures the page is not statically optimized
-export const dynamic = 'force-dynamic';
+export const dynamicParams = true;
 
 export default function Page() {
   return <MarketingPage />;
