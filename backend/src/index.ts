@@ -68,8 +68,14 @@ app.set('io', io);
 // Middleware
 app.use(cors({
   origin: function (origin, callback) {
+    const allowed = [
+      "http://localhost:3000",
+      "http://localhost:3001",
+      "https://row-eight-weld.vercel.app",
+      process.env.FRONTEND_URL
+    ].filter(Boolean) as string[];
     if (!origin) return callback(null, true);
-    if (["http://localhost:3000", "http://localhost:3001"].includes(origin)) {
+    if (allowed.includes(origin)) {
       return callback(null, true);
     }
     return callback(new Error("Not allowed by CORS"));
