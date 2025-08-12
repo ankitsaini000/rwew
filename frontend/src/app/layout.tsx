@@ -5,6 +5,7 @@ import ClientProviders from "../components/ClientProviders";
 import { Toaster } from 'react-hot-toast';
 import AIChat from '@/components/ai/AIChat';
 import BottomBar from '../components/ui/BottomBar';
+import OfflineOverlay from '../components/OfflineOverlay';
 
 const inter = Inter({
   subsets: ["latin"],
@@ -33,6 +34,7 @@ export default function RootLayout({
       <body className={`antialiased font-sans`}>
         <ClientProviders>
           {children}
+          <OfflineOverlay />
           <BottomBar />
           <Toaster />
           <AIChat />

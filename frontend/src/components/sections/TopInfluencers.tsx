@@ -13,6 +13,18 @@ export const TopInfluencers = () => {
   const [error, setError] = useState<string | null>(null);
   const [creatorScroll, setCreatorScroll] = useState(0);
 
+  // Resolve a starting price from various shapes coming from API
+  const getStartingPrice = (creator: any): string | number | undefined => {
+    const sp = creator?.startingPrice;
+    if (typeof sp === 'number' && !isNaN(sp)) return sp;
+    if (typeof sp === 'string' && sp.trim()) return sp;
+    const std = creator?.pricing?.standard?.price ?? creator?.pricing?.standard;
+    if (typeof std === 'number') return std;
+    const basic = creator?.pricing?.basic?.price ?? creator?.pricing?.basic;
+    if (typeof basic === 'number') return basic;
+    return undefined;
+  };
+
   useEffect(() => {
     const fetchCategories = async () => {
       try {
@@ -85,7 +97,7 @@ export const TopInfluencers = () => {
             </p>
           </div>
           <button className="text-sm md:text-base text-purple-600 hover:text-purple-700 font-medium transition-colors">
-            View All Creators
+            View All
           </button>
         </div>
 
@@ -167,12 +179,7 @@ export const TopInfluencers = () => {
                     description={creator.bio || creator.description || creator.personalInfo?.bio || creator.descriptionFaq?.briefDescription}
                     rating={creator.rating || creator.metrics?.ratings?.average || 0}
                     reviewCount={creator.reviewCount || creator.metrics?.ratings?.count || 0}
-                    startingPrice={
-                      typeof creator.startingPrice === 'number' ? creator.startingPrice :
-                      (typeof creator.startingPrice === 'string' && creator.startingPrice.trim() ? creator.startingPrice :
-                        (typeof creator.pricing?.standard?.price === 'number' ? creator.pricing.standard.price :
-                          (typeof creator.pricing?.basic?.price === 'number' ? creator.pricing.basic.price : undefined)))
-                    }
+                    startingPrice={getStartingPrice(creator)}
                     isLiked={false}
                     title={creator.title || creator.professionalInfo?.title}
                     completedProjects={creator.completedProjects}
@@ -200,12 +207,7 @@ export const TopInfluencers = () => {
                     description={creator.bio || creator.description || creator.personalInfo?.bio || creator.descriptionFaq?.briefDescription}
                     rating={creator.rating || creator.metrics?.ratings?.average || 0}
                     reviewCount={creator.reviewCount || creator.metrics?.ratings?.count || 0}
-                    startingPrice={
-                      typeof creator.startingPrice === 'number' ? creator.startingPrice :
-                      (typeof creator.startingPrice === 'string' && creator.startingPrice.trim() ? creator.startingPrice :
-                        (typeof creator.pricing?.standard?.price === 'number' ? creator.pricing.standard.price :
-                          (typeof creator.pricing?.basic?.price === 'number' ? creator.pricing.basic.price : undefined)))
-                    }
+                    startingPrice={getStartingPrice(creator)}
                     isLiked={false}
                     title={creator.title || creator.professionalInfo?.title}
                     completedProjects={creator.completedProjects}

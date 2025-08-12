@@ -1,8 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { Check, ChevronRight } from "lucide-react";
-import Image from "next/image";
+import { ChevronRight, Award, Users } from "lucide-react";
 import { demoProcessImages } from "../../lib/demoImages";
 
 export const HowItWorks = () => {
@@ -65,37 +64,34 @@ export const HowItWorks = () => {
   ];
 
   return (
-    <section className="py-20 bg-gray-50">
+    <section className="py-12 md:py-16 bg-gray-50">
       <div className="container mx-auto px-4">
-        <div className="text-center mb-16">
-          <h2 className="text-3xl font-bold text-gray-900 mb-4">
-            How It Works
-          </h2>
-          <p className="text-gray-600 max-w-2xl mx-auto">
-            Our platform makes it easy for influencers and brands to connect,
-            collaborate, and create successful partnerships
+        {/* Header */}
+        <div className="text-center mb-8 md:mb-10">
+          <h2 className="text-2xl md:text-3xl font-bold tracking-tight text-gray-900">How it works</h2>
+          <div className="mx-auto mt-2 h-1 w-20 rounded-full bg-gradient-to-r from-purple-500 via-fuchsia-500 to-indigo-500" />
+          <p className="mt-2 text-gray-600 max-w-2xl mx-auto text-sm md:text-base">
+            A simple, step-by-step flow for influencers and brands to start and succeed.
           </p>
 
           {/* Tabs */}
           <div className="flex justify-center mt-8">
-            <div className="bg-white p-1 rounded-xl inline-flex shadow-sm">
+            <div className="inline-flex items-center rounded-full border border-gray-200 bg-white p-0.5">
               <button
                 onClick={() => setActiveTab("influencer")}
-                className={`px-6 py-2 rounded-lg text-sm font-medium transition-all focus:outline-none focus:ring-2 focus:ring-purple-400
-                  ${activeTab === "influencer"
-                    ? "bg-gradient-to-r from-purple-400 to-purple-600 text-white shadow"
-                    : "text-gray-500 hover:text-purple-600"}
-                `}
+                className={`px-4 py-1.5 rounded-full text-sm font-medium transition-all ${
+                  activeTab === "influencer" ? "bg-gray-900 text-white" : "text-gray-700 hover:bg-gray-100"
+                }`}
+                aria-pressed={activeTab === "influencer"}
               >
                 For Influencers
               </button>
               <button
                 onClick={() => setActiveTab("brand")}
-                className={`px-6 py-2 rounded-lg text-sm font-medium transition-all focus:outline-none focus:ring-2 focus:ring-purple-400
-                  ${activeTab === "brand"
-                    ? "bg-gradient-to-r from-purple-400 to-purple-600 text-white shadow"
-                    : "text-gray-500 hover:text-purple-600"}
-                `}
+                className={`px-4 py-1.5 rounded-full text-sm font-medium transition-all ${
+                  activeTab === "brand" ? "bg-gray-900 text-white" : "text-gray-700 hover:bg-gray-100"
+                }`}
+                aria-pressed={activeTab === "brand"}
               >
                 For Brands
               </button>
@@ -103,68 +99,47 @@ export const HowItWorks = () => {
           </div>
         </div>
 
-        <div className="space-y-16 lg:space-y-24 relative">
-          {(activeTab === "influencer" ? influencerSteps : brandSteps).map(
-            (step, index, arr) => (
-              <div
-                key={index}
-                className={`flex flex-col relative z-10 ${
-                  index % 2 === 0 ? "lg:flex-row" : "lg:flex-row-reverse"
-                } items-center gap-8 lg:gap-16`}
-              >
-                {/* Timeline connector (desktop only) */}
-                {index < arr.length - 1 && (
-                  <div className={`hidden lg:block absolute top-1/2 ${index % 2 === 0 ? "right-0" : "left-0"} w-1/2 h-1 z-0`}> 
-                    <div className="h-1 w-full bg-gradient-to-r from-purple-200 to-purple-400 opacity-60 rounded-full"></div>
-                  </div>
-                )}
-                <div className="lg:w-1/2 space-y-4">
-                  <div className="flex items-center gap-3">
-                    <div className="w-14 h-14 rounded-full bg-gradient-to-br from-purple-400 to-purple-600 text-white flex items-center justify-center text-2xl font-bold shadow-lg transition-transform duration-300 hover:scale-110 border-4 border-white">
-                      {index + 1}
-                    </div>
-                    <h3 className="text-2xl font-bold text-gray-900">
-                      {step.title}
-                    </h3>
-                  </div>
-                  <p className="text-gray-600 leading-relaxed">
-                    {step.description}
-                  </p>
+        {/* Vertical timeline */}
+        <div className="relative">
+          <div className="absolute left-[20px] md:left-[24px] top-0 bottom-0 w-px bg-gradient-to-b from-gray-200 via-gray-100 to-gray-200" />
 
-                  {index ===
-                    (activeTab === "influencer"
-                      ? influencerSteps.length - 1
-                      : brandSteps.length - 1) && (
-                    <div className="pt-4">
-                      <a
-                        href={
-                          activeTab === "influencer"
-                            ? "/register?type=creator"
-                            : "/register?type=brand"
-                        }
-                        className="inline-flex items-center bg-gradient-to-r from-purple-500 to-purple-700 text-white px-6 py-3 rounded-lg font-semibold shadow hover:from-purple-600 hover:to-purple-800 transition text-lg"
-                      >
-                        {activeTab === "influencer"
-                          ? "Join as Influencer"
-                          : "Register as Brand"}
-                        <ChevronRight className="ml-2 h-5 w-5" />
-                      </a>
-                    </div>
-                  )}
+          <div className="space-y-6 md:space-y-8">
+            {(activeTab === "influencer" ? influencerSteps : brandSteps).map((step, index, arr) => (
+              <div key={index} className="relative grid grid-cols-[40px_1fr] md:grid-cols-[48px_1fr] gap-3 md:gap-5">
+                {/* Marker */}
+                <div className="relative flex items-start justify-center">
+                  <div className="z-10 grid h-9 w-9 md:h-10 md:w-10 place-items-center rounded-full bg-white text-gray-900 text-sm font-semibold shadow ring-1 ring-gray-200">
+                    {index + 1}
+                  </div>
                 </div>
 
-                <div className="lg:w-1/2 flex justify-center">
-                  <div className="bg-white p-4 rounded-2xl shadow-lg border border-purple-100 hover:shadow-2xl transition-transform duration-300 hover:scale-105">
-                    <img
-                      src={step.image}
-                      alt={step.title}
-                      className="h-64 w-full object-contain rounded-lg"
-                    />
+                {/* Card */}
+                <div className="group relative rounded-2xl p-[1px] bg-gradient-to-br from-purple-500/10 via-fuchsia-500/10 to-indigo-500/10 border border-gray-100/80 shadow-sm hover:shadow-md transition-all">
+                  <div className="relative rounded-2xl bg-white p-4 md:p-5">
+                    <div className="md:flex md:items-center md:gap-5">
+                      <img src={step.image} alt={step.title} className="w-full md:w-56 h-32 md:h-36 object-cover rounded-xl mb-3 md:mb-0" />
+                      <div>
+                        <h3 className="text-base md:text-lg font-semibold text-gray-900">{step.title}</h3>
+                        <p className="mt-1.5 text-sm md:text-base text-gray-600 leading-relaxed">{step.description}</p>
+
+                        {index === (activeTab === "influencer" ? influencerSteps.length - 1 : brandSteps.length - 1) && (
+                          <div className="pt-3">
+                            <a
+                              href={activeTab === "influencer" ? "/register?type=creator" : "/register?type=brand"}
+                              className="inline-flex items-center rounded-lg bg-gray-900 text-white px-4 py-2 text-sm font-semibold shadow hover:bg-black/90 transition"
+                            >
+                              {activeTab === "influencer" ? "Get started" : "Launch your campaign"}
+                              <ChevronRight className="ml-2 h-4 w-4" />
+                            </a>
+                          </div>
+                        )}
+                      </div>
+                    </div>
                   </div>
                 </div>
               </div>
-            )
-          )}
+            ))}
+          </div>
         </div>
       </div>
     </section>

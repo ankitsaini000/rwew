@@ -2,36 +2,7 @@
 
 import { ChevronLeft, ChevronRight } from "lucide-react";
 import React from "react";
-import { demoCategoryIcons } from "../../lib/demoImages";
 import { getCategories } from "../../services/api";
-import {
-  Shirt,
-  Plane,
-  Dumbbell,
-  Gamepad2,
-  Utensils,
-  Monitor,
-  Paintbrush,
-  Briefcase,
-  PiggyBank,
-  Palette,
-  BookOpen,
-  Music,
-  Users,
-  Globe,
-  Star,
-  HeartHandshake,
-  Sparkles,
-  Camera,
-  Film,
-  ShoppingBag,
-  User,
-  Layers,
-  Smile,
-  Sun,
-  Leaf,
-  // Add more Lucide icons as needed
-} from "lucide-react";
 import { useRouter } from "next/navigation";
 
 const categoryEmojis: Record<string, string> = {
@@ -89,7 +60,10 @@ export const Categories = () => {
   const [categories, setCategories] = React.useState<any[]>([]);
   const [loading, setLoading] = React.useState(true);
   const [error, setError] = React.useState<string | null>(null);
-  const [categoryScroll, setCategoryScroll] = React.useState(0);
+  const [canScrollLeft, setCanScrollLeft] = React.useState(false);
+  const [canScrollRight, setCanScrollRight] = React.useState(true);
+  const containerRef = React.useRef<HTMLDivElement | null>(null);
+  const headerRef = React.useRef<HTMLDivElement | null>(null);
 
   const router = useRouter();
 
@@ -113,92 +87,136 @@ export const Categories = () => {
     fetchCategories();
   }, []);
 
-  const scrollCategories = (direction: "left" | "right") => {
-    const container = document.getElementById("categories-container");
-    if (container) {
-      const scrollAmount = 200;
-      const newScroll =
-        direction === "left"
-          ? categoryScroll - scrollAmount
-          : categoryScroll + scrollAmount;
-
-      container.scrollTo({
-        left: newScroll,
-        behavior: "smooth",
-      });
-      setCategoryScroll(newScroll);
-    }
+  const updateScrollButtons = () => {
+    const el = containerRef.current;
+    if (!el) return;
+    setCanScrollLeft(el.scrollLeft > 8);
+    setCanScrollRight(el.scrollLeft + el.clientWidth < el.scrollWidth - 8);
   };
 
+  const scrollCategories = (direction: "left" | "right") => {
+    const el = containerRef.current;
+    if (!el) return;
+    const scrollAmount = Math.min(320, el.clientWidth * 0.8);
+    const next = direction === "left" ? el.scrollLeft - scrollAmount : el.scrollLeft + scrollAmount;
+    el.scrollTo({ left: next, behavior: "smooth" });
+    // update buttons after scroll animation
+    window.setTimeout(updateScrollButtons, 300);
+  };
+
+  React.useEffect(() => {
+    updateScrollButtons();
+  }, [categories.length]);
+
+  // Keyboard navigation for accessibility
+  React.useEffect(() => {
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key === "ArrowLeft") {
+        e.preventDefault();
+        scrollCategories("left");
+      } else if (e.key === "ArrowRight") {
+        e.preventDefault();
+        scrollCategories("right");
+      }
+    };
+    const node = containerRef.current;
+    if (node) node.addEventListener("keydown", onKey);
+    return () => {
+      if (node) node.removeEventListener("keydown", onKey);
+    };
+  }, []);
+
+  // Curated gradient palette for cards (ensure Tailwind sees these classes)
+  const gradientPalette: string[] = [
+    "from-purple-500/10 to-pink-500/10",
+    "from-blue-500/10 to-cyan-500/10",
+    "from-emerald-500/10 to-lime-500/10",
+    "from-amber-500/10 to-orange-500/10",
+    "from-indigo-500/10 to-violet-500/10",
+    "from-rose-500/10 to-fuchsia-500/10",
+  ];
+
   return (
-    <section className="py-6 md:py-16 relative overflow-hidden">
-      {/* Enhanced Decorative background */}
-      <div className="absolute top-0 right-0 w-40 md:w-80 h-40 md:h-80 bg-blue-100 rounded-full mix-blend-multiply filter blur-3xl opacity-30"></div>
-      <div className="absolute bottom-0 left-0 w-40 md:w-80 h-40 md:h-80 bg-purple-100 rounded-full mix-blend-multiply filter blur-3xl opacity-30"></div>
-      <div className="absolute top-1/3 left-1/4 w-32 md:w-64 h-32 md:h-64 bg-pink-100 rounded-full mix-blend-multiply filter blur-3xl opacity-20"></div>
-      
-      <div className="container mx-auto px-3 md:px-4 relative z-10">
-        {/* Header with Title and Navigation */}
-        <div className="flex items-center justify-between mb-4 md:mb-12">
-          <h2 className="text-lg md:text-2xl font-bold bg-clip-text text-transparent bg-gradient-to-r from-purple-600 to-pink-600 animate-fadeInRight">
-            Choose your Categories
-          </h2>
-          <div className="flex gap-1 md:gap-2 animate-fadeInLeft">
-            <button
-              onClick={() => scrollCategories("left")}
-              className="p-1 md:p-2 rounded-full bg-transparent backdrop-blur-sm border border-white/20 hover:bg-white/40 hover:text-purple-600 transition-all"
-            >
-              <ChevronLeft className="h-3.5 w-3.5 md:h-5 md:w-5" />
-            </button>
-            <button
-              onClick={() => scrollCategories("right")}
-              className="p-1 md:p-2 rounded-full bg-transparent backdrop-blur-sm border border-white/20 hover:bg-white/40 hover:text-purple-600 transition-all"
-            >
-              <ChevronRight className="h-3.5 w-3.5 md:h-5 md:w-5" />
-            </button>
+    <section className="relative overflow-hidden py-8 md:py-16">
+      {/* Ambient background */}
+      <div className="absolute inset-0 -z-10 bg-[radial-gradient(800px_400px_at_-10%_40%,rgba(168,85,247,0.08),transparent),radial-gradient(700px_360px_at_110%_70%,rgba(236,72,153,0.08),transparent)]" />
+
+      <div className="mx-auto max-w-7xl px-4">
+        {/* Header with arrows on the right side */}
+        <div className="mb-6 md:mb-10" ref={headerRef}>
+          <div className="flex items-center justify-between gap-3">
+            <h2 className="text-xl md:text-3xl font-extrabold tracking-tight text-gray-900">Explore categories</h2>
+            <div className="flex items-center gap-2">
+              <button
+                onClick={() => scrollCategories("left")}
+                aria-label="Scroll left"
+                disabled={!canScrollLeft}
+                className={`rounded-full border p-2 transition ${canScrollLeft ? "bg-white/80 hover:bg-white shadow" : "bg-white/50 opacity-60"}`}
+              >
+                <ChevronLeft className="h-4 w-4 md:h-5 md:w-5 text-gray-700" />
+              </button>
+              <button
+                onClick={() => scrollCategories("right")}
+                aria-label="Scroll right"
+                disabled={!canScrollRight}
+                className={`rounded-full border p-2 transition ${canScrollRight ? "bg-white/80 hover:bg-white shadow" : "bg-white/50 opacity-60"}`}
+              >
+                <ChevronRight className="h-4 w-4 md:h-5 md:w-5 text-gray-700" />
+              </button>
+            </div>
           </div>
+          <p className="mt-1 text-sm text-gray-600">Jump into a niche to discover matching creators instantly.</p>
         </div>
 
-        {/* Categories Slider */}
-        <div className="relative max-w-full md:max-w-6xl mx-auto">
+        {/* Slider */}
+        <div className="relative">
           {loading ? (
-            <div className="text-center text-gray-500 py-6 md:py-12 bg-transparent backdrop-blur-sm border border-white/20">Loading categories...</div>
+            <div className="flex gap-3 md:gap-5 overflow-hidden">
+              {Array.from({ length: 10 }).map((_, i) => (
+                <div key={i} className="h-[100px] w-[120px] md:h-[140px] md:w-[180px] animate-pulse rounded-2xl bg-white/70 shadow-sm" />
+              ))}
+            </div>
           ) : error ? (
-            <div className="text-center text-red-500 py-6 md:py-12 bg-transparent backdrop-blur-sm border border-white/20">{error}</div>
+            <div className="rounded-xl border border-red-200 bg-red-50 p-4 text-red-700">{error}</div>
           ) : categories.length === 0 ? (
-            <div className="text-center text-gray-400 py-6 md:py-12 bg-transparent backdrop-blur-sm border border-white/20">No categories found.</div>
+            <div className="rounded-xl border border-purple-200/60 bg-white/70 p-6 text-center text-gray-500">No categories found.</div>
           ) : (
             <div
+              ref={containerRef}
+              onScroll={updateScrollButtons}
               id="categories-container"
-              className="flex overflow-x-auto scroll-smooth gap-3 md:gap-8 px-2 md:px-4 pb-4 md:pb-0 hide-scrollbar touch-pan-x snap-x snap-mandatory"
+              className="hide-scrollbar flex snap-x snap-mandatory gap-2.5 overflow-x-auto scroll-smooth px-1 py-2 md:gap-5 md:px-2 focus:outline-none"
+              role="list"
+              aria-label="Categories"
+              tabIndex={0}
             >
-              {categories.map((category, idx) => (
-                <div
-                  key={category.name || category.title || idx}
-                  className="flex-shrink-0 w-[100px] md:w-[160px] cursor-pointer group animate-fadeInUp snap-start"
-                  style={{ animationDelay: `${idx * 0.05}s` }}
-                  onClick={() => handleCategoryClick(category.name)}
-                >
-                  <div className="flex flex-col items-center">
-                    {/* Circle with Emoji Icon - Removed white background */}
-                    <div className="w-14 h-14 md:w-20 md:h-20 rounded-full bg-transparent backdrop-blur-sm flex items-center justify-center mb-2 md:mb-4 transition-all duration-300 group-hover:scale-110 group-hover:shadow-lg border border-white/20">
-                      <span className="text-2xl md:text-4xl">
-                        {categoryEmojis[category.name] || "❓"}
-                      </span>
-                    </div>
-                    {/* Category Title */}
-                    <span className="text-xs md:text-sm font-medium text-gray-900 text-center">
-                      {category.name || category.title}
+              {categories.map((category, idx) => {
+                const label = category.name || category.title || `Category ${idx + 1}`;
+                const gradient = gradientPalette[idx % gradientPalette.length];
+                return (
+                  <button
+                    key={label}
+                    type="button"
+                    onClick={() => handleCategoryClick(label)}
+                    aria-label={`Open ${label} category`}
+                    className="group relative inline-flex h-[110px] w-[120px] flex-shrink-0 snap-start flex-col items-start justify-between rounded-2xl border border-purple-100/60 bg-white/70 p-3 text-left shadow-sm backdrop-blur transition will-change-transform hover:-translate-y-1 hover:shadow-lg focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-purple-300 md:h-[160px] md:w-[210px]"
+                  >
+                    {/* gradient glow */}
+                    <span className={`pointer-events-none absolute -z-10 inset-0 rounded-2xl bg-gradient-to-br ${gradient}`} />
+                    <span className="inline-flex h-9 w-9 items-center justify-center rounded-xl border border-purple-100/70 bg-white/80 text-lg md:h-10 md:w-10 md:text-2xl shadow-sm transition-transform group-hover:scale-110">
+                      {categoryEmojis[label] || "❓"}
                     </span>
-                  </div>
-                </div>
-              ))}
+                    <span className="line-clamp-2 w-full text-xs font-semibold text-gray-900 md:text-base">{label}</span>
+                    <span className="pointer-events-none absolute inset-0 rounded-2xl ring-0 ring-transparent transition group-hover:ring-2 group-hover:ring-purple-300/60" />
+                  </button>
+                );
+              })}
             </div>
           )}
 
-          {/* Gradient Overlays with background color instead of white */}
-          <div className="absolute left-0 top-0 bottom-0 w-8 md:w-16 bg-gradient-to-r from-[#f5f7ff] to-transparent pointer-events-none opacity-50" />
-          <div className="absolute right-0 top-0 bottom-0 w-8 md:w-16 bg-gradient-to-l from-[#f5f7ff] to-transparent pointer-events-none opacity-50" />
+          {/* Edge fades removed to avoid white borders on sides */}
+
+          {/* Mobile overlay controls removed (arrows now in header) */}
         </div>
       </div>
     </section>

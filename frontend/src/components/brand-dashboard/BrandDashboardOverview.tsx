@@ -660,7 +660,7 @@ export default function BrandDashboardOverview({
                   ) : (
                     <>
                       <Shield className="w-4 h-4 mr-2" />
-                      Complete Verification {itemsLeft > 0 && `(${itemsLeft} item${itemsLeft > 1 ? 's' : ''} left)`}
+                      Complete Verification {itemsLeft > 0 && `(${itemsLeft} item${itemsLeft > 1 ? 's' : ''})`}
                     </>
                   )}
                 </button>

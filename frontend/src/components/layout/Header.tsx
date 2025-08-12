@@ -25,31 +25,19 @@ const UserMenu = ({ isOpen, onClose, onLogout, onSettings }: UserMenuProps) => {
   
   if (!isOpen) return null;
 
-  const handleLikedCreatorsClick = () => {
-    router.push('/liked-creators');
+  const go = (path: string) => {
+    router.push(path);
     onClose();
   };
 
   return (
-    <div className="absolute right-0 mt-2 w-48 bg-white rounded-md shadow-lg py-1 border">
-      <button
-        onClick={onSettings}
-        className="block w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-100"
-      >
-        Settings
-      </button>
-      <button
-        onClick={handleLikedCreatorsClick}
-        className="block w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-100"
-      >
-        Liked Creators
-      </button>
-      <button
-        onClick={onLogout}
-        className="block w-full text-left px-4 py-2 text-sm text-red-600 hover:bg-gray-100"
-      >
-        Log out
-      </button>
+    <div className="absolute right-0 mt-2 w-56 bg-white rounded-xl shadow-xl py-2 border border-gray-200 z-50">
+      <button onClick={() => go('/dashboard')} className="block w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-100">Dashboard</button>
+      <button onClick={() => go('/profile')} className="block w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-100">Profile</button>
+      <button onClick={() => go('/liked-creators')} className="block w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-100">Liked Creators</button>
+      <button onClick={onSettings} className="block w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-100">Settings</button>
+      <div className="my-1 h-px bg-gray-100" />
+      <button onClick={onLogout} className="block w-full text-left px-4 py-2 text-sm text-red-600 hover:bg-gray-100">Sign out</button>
     </div>
   );
 };
@@ -263,26 +251,12 @@ export const Header: React.FC = () => {
                     {user.fullName || user.email.split("@")[0]}
                   </span>
                 </button>
-                {userMenuOpen && (
-                  <div className="absolute right-0 mt-2 w-48 glass-morphism py-1 z-50 animate-fadeInUp">
-                    {user.avatar ? (
-                      <img
-                        src={user.avatar}
-                        alt={user.fullName || user.email}
-                        className="w-8 h-8 rounded-full"
-                      />
-                    ) : (
-                      <div className="w-8 h-8 rounded-full bg-purple-100 flex items-center justify-center">
-                        <span className="text-sm font-medium text-purple-600">
-                          {(user.fullName || user.email).charAt(0).toUpperCase()}
-                        </span>
-                      </div>
-                    )}
-                    <span className="text-gray-700">
-                      {user.fullName || user.email.split("@")[0]}
-                    </span>
-                  </div>
-                )}
+                <UserMenu
+                  isOpen={userMenuOpen}
+                  onClose={() => setUserMenuOpen(false)}
+                  onLogout={handleLogout}
+                  onSettings={handleSettings}
+                />
               </div>
             </div>
           ) : (

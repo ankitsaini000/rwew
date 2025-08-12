@@ -19,7 +19,7 @@ export interface CreatorCardProps {
   description?: string;
   rating?: number;
   reviewCount?: number;
-  startingPrice?: string;
+  startingPrice?: string | number;
   isLiked?: boolean;
   title?: string;
   completedProjects?: number;
@@ -156,6 +156,18 @@ const CreatorCard: React.FC<CreatorCardProps> = ({
     // tiktok: toUrl('tiktok', socialMedia?.tiktok),
   };
 
+  const computeStartingPriceString = (value?: string | number): string => {
+    if (typeof value === 'string') {
+      const s = value.trim();
+      if (s) return s.startsWith('₹') ? s : `₹${s}`;
+    }
+    if (typeof value === 'number' && !isNaN(Number(value))) {
+      const priceNum: number = Number(value);
+      return `₹${priceNum.toLocaleString('en-IN')}`;
+    }
+    return 'Contact for price';
+  };
+
   const handleToggleLike = async (e: React.MouseEvent) => {
     e.stopPropagation();
     
@@ -228,7 +240,7 @@ const CreatorCard: React.FC<CreatorCardProps> = ({
         category: category || 'Creator',
         level: level || 'Creator',
         description: description || '',
-        startingPrice: startingPrice || '₹0',
+        startingPrice: computeStartingPriceString(startingPrice),
         isLiked: !isLiked,
         location: '',
       };
@@ -289,12 +301,20 @@ const CreatorCard: React.FC<CreatorCardProps> = ({
   const primaryCategory: string | undefined = normalizedCategories[0];
   const remainingCategories: string[] = normalizedCategories.slice(1);
 
+  // Limit how many category chips are shown to avoid tall cards
+  const displayCategories: string[] = showCategories
+    ? normalizedCategories.slice(0, 3)
+    : [];
+  const hasMoreCategories: boolean = showCategories && normalizedCategories.length > displayCategories.length;
+
   return (
     <div
       ref={ref}
-      className="group bg-white rounded-xl p-4 md:p-6 hover:shadow-lg transition-all duration-300 cursor-pointer border border-gray-100 h-[360px] sm:h-[380px] md:h-[420px] flex flex-col justify-between overflow-hidden card-gradient-bg card-hover-effect"
+      className="group bg-white rounded-xl p-4 md:p-6 hover:shadow-lg transition-all duration-300 cursor-pointer border border-gray-100 flex flex-col gap-3 overflow-visible card-gradient-bg card-hover-effect"
       onClick={handleCardClick}
     >
+      {/* Content wrapper keeps footer anchored and prevents clipping */}
+      <div className="flex-1 min-h-0">
       {/* Header Section */}
       <div className="flex justify-between items-start mb-4 md:mb-6">
         <div className="flex gap-3 md:gap-4">
@@ -332,9 +352,9 @@ const CreatorCard: React.FC<CreatorCardProps> = ({
       <div className="space-y-3 md:space-y-4">
         <div className="flex flex-wrap gap-2">
           {/* Categories shown above the title */}
-          {showCategories && normalizedCategories.length > 0 && (
+          {showCategories && displayCategories.length > 0 && (
             <div className="flex flex-wrap gap-1 mb-2 w-full">
-              {normalizedCategories.map((cat, idx) => (
+              {displayCategories.map((cat, idx) => (
                 <span key={idx} className="inline-block">
                   <Link
                     href={`/categories/${encodeURIComponent(cat)}`}
@@ -346,6 +366,11 @@ const CreatorCard: React.FC<CreatorCardProps> = ({
                   </Link>
                 </span>
               ))}
+              {hasMoreCategories && (
+                <span className="inline-block">
+                  <span className="category-pill opacity-80 cursor-default" onClick={(e) => e.stopPropagation()}>+{normalizedCategories.length - displayCategories.length}</span>
+                </span>
+              )}
             </div>
           )}
           {level && (
@@ -479,26 +504,13 @@ const CreatorCard: React.FC<CreatorCardProps> = ({
           )}
         </div>
       </div>
+      </div>
 
       {/* Footer */}
-      <div className="flex items-center justify-between mt-4 sm:mt-6 pt-3 sm:pt-6 border-t border-gray-100">
+      <div className="flex items-center justify-between mt-3 sm:mt-4 pt-3 sm:pt-4 border-t border-gray-100">
         <div>
           <p className="text-xs text-gray-500">Starting from</p>
-          <p className="text-lg font-semibold text-purple-600">
-            {(() => {
-              // Normalize starting price from various shapes
-              if (typeof startingPrice === 'string') {
-                const s = startingPrice.trim();
-                if (s) return s.startsWith('₹') ? s : `₹${s}`;
-              }
-              if (typeof startingPrice === 'number' && !isNaN(Number(startingPrice))) {
-                const priceNum: number = Number(startingPrice);
-                return `₹${priceNum.toLocaleString('en-IN')}`;
-              }
-              // If not provided, show CTA text
-              return 'Contact for price';
-            })()}
-          </p>
+          <p className="text-lg font-semibold text-purple-600">{computeStartingPriceString(startingPrice)}</p>
         </div>
         <div className="flex items-center gap-2">
           <button

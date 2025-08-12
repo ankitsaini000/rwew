@@ -12,6 +12,9 @@ import { Testimonials } from "@/components/sections/Testimonials";
 import { VideoSection } from "@/components/sections/VideoSection";
 import { BlogSection } from "@/components/sections/BlogSection";
 import { Footer } from "@/components/layout/Footer";
+import MobileQuickActions from "@/components/sections/MobileQuickActions";
+import MobilePromo from "@/components/sections/MobilePromo";
+// import MobileTrust from "@/components/sections/MobileTrust";
 
 export default function HomePageSections() {
   const [selectedCategory, setSelectedCategory] = useState("");
@@ -19,6 +22,9 @@ export default function HomePageSections() {
     <>
       <Header />
       <Hero selectedCategory={selectedCategory} setSelectedCategory={setSelectedCategory} />
+      <MobileQuickActions />
+      <MobilePromo />
+      {/* <MobileTrust /> */}
       <TopInfluencers />
       <Categories />
       <Features selectedCategory={selectedCategory} />
