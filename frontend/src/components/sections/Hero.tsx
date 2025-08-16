@@ -230,7 +230,7 @@ export const Hero = ({ selectedCategory, setSelectedCategory }: { selectedCatego
                 Search
               </button>
             </div>
-            <div className="mt-2.5 flex items-center gap-2 overflow-x-auto">
+            <div className="mt-2.5 flex items-center gap-2 overflow-x-auto pb-2">
               {categoriesLoading && (
                 <span className="text-xs text-gray-500 px-2 py-1">Loading categories…</span>
               )}

@@ -14,9 +14,20 @@ export const initializeSocket = (httpServer: HTTPServer) => {
   
   io = new Server(httpServer, {
     cors: {
-      origin: process.env.FRONTEND_URL || 'https://row-eight-weld.vercel.app',
-      methods: ['GET', 'POST']
-    }
+      origin: [
+        process.env.FRONTEND_URL, 
+        'https://row-eight-weld.vercel.app', 
+        'http://localhost:3000',
+        'http://localhost:3001',
+        'http://localhost:5173',
+        'https://rwew.onrender.com'
+      ],
+      methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
+      credentials: true,
+      allowedHeaders: ["Content-Type", "Authorization", "X-Requested-With"]
+    },
+    transports: ['websocket', 'polling'],
+    allowEIO3: true
   });
 
   // Authentication middleware

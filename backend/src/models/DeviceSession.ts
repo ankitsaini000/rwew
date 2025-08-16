@@ -20,4 +20,9 @@ const DeviceSessionSchema = new Schema<IDeviceSession>({
   sessionToken: { type: String, required: true },
 });
 
-export default mongoose.model<IDeviceSession>('DeviceSession', DeviceSessionSchema); 
+// Create indexes for better query performance
+DeviceSessionSchema.index({ userId: 1 });
+DeviceSessionSchema.index({ sessionToken: 1 }, { unique: true });
+DeviceSessionSchema.index({ lastActive: -1 });
+
+export default mongoose.model<IDeviceSession>('DeviceSession', DeviceSessionSchema);

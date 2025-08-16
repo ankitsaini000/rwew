@@ -42,4 +42,8 @@ const DeactivatedAccountSchema = new mongoose_1.Schema({
     reason: { type: String },
     deactivatedAt: { type: Date, required: true },
 });
+// Create indexes for better query performance
+DeactivatedAccountSchema.index({ userId: 1 }, { unique: true });
+DeactivatedAccountSchema.index({ email: 1 });
+DeactivatedAccountSchema.index({ deactivatedAt: -1 });
 exports.default = mongoose_1.default.model('DeactivatedAccount', DeactivatedAccountSchema);

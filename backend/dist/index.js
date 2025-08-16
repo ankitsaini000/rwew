@@ -69,9 +69,15 @@ app.set('io', io);
 // Middleware
 app.use((0, cors_1.default)({
     origin: function (origin, callback) {
+        const allowed = [
+            "http://localhost:3000",
+            "http://localhost:3001",
+            "https://row-eight-weld.vercel.app",
+            process.env.FRONTEND_URL
+        ].filter(Boolean);
         if (!origin)
             return callback(null, true);
-        if (["http://localhost:3000", "http://localhost:3001"].includes(origin)) {
+        if (allowed.includes(origin)) {
             return callback(null, true);
         }
         return callback(new Error("Not allowed by CORS"));
@@ -88,12 +94,16 @@ app.use((0, helmet_1.default)({
 }));
 app.use(express_1.default.json());
 app.use(express_1.default.urlencoded({ extended: false }));
-// Session configuration for passport
+// Session configuration for passport with optimized settings
 app.use((0, express_session_1.default)({
     secret: process.env.SESSION_SECRET || 'keyboard cat',
     resave: false,
     saveUninitialized: false,
-    cookie: { secure: process.env.NODE_ENV === 'production' }
+    cookie: {
+        secure: process.env.NODE_ENV === 'production',
+        httpOnly: true,
+        maxAge: 24 * 60 * 60 * 1000 // 24 hours
+    }
 }));
 // Set up passport
 const passport = (0, passport_1.configurePassport)();

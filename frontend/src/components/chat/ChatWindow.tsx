@@ -487,11 +487,11 @@ export default function ChatWindow({ conversationId, otherParticipant }: ChatWin
   }
 
   return (
-    <div className="flex flex-col h-full w-full">
+    <div className="flex flex-col h-screen w-full bg-white" style={{ height: '100vh', maxHeight: '100vh' }}>
       {/* File Preview Modal (mobile only) */}
       {file && <FilePreviewModal />}
-      {/* Sticky Header with participant info */}
-      <div className="sticky top-0 z-10 bg-white/90 backdrop-blur-md border-b border-gray-100 px-4 py-3 flex items-center gap-3 shadow-sm">
+      {/* Fixed Header with participant info */}
+      <div className="flex-shrink-0 z-10 bg-white border-b border-gray-200 px-4 py-3 flex items-center gap-3 shadow-sm">
         {otherParticipant.avatar && String(otherParticipant.avatar).trim() ? (
           <img
             src={String(otherParticipant.avatar)}

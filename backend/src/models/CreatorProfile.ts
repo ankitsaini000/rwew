@@ -354,6 +354,51 @@ creatorProfileSchema.post('save', async function(doc) {
   }
 });
 
+// Performance-optimized indexes for faster queries
+creatorProfileSchema.index({ status: 1, 'publishInfo.isPublished': 1 });
+creatorProfileSchema.index({ 'professionalInfo.categories': 1 });
+creatorProfileSchema.index({ 'professionalInfo.subcategories': 1 });
+creatorProfileSchema.index({ 'professionalInfo.tags': 1 });
+creatorProfileSchema.index({ 'pricing.standard.price': 1 });
+creatorProfileSchema.index({ 'socialMedia.totalReach': 1 });
+creatorProfileSchema.index({ 'metrics.ratings.average': -1 });
+creatorProfileSchema.index({ 'metrics.profileViews': -1 });
+creatorProfileSchema.index({ 'metrics.projectsCompleted': -1 });
+creatorProfileSchema.index({ 'personalInfo.location.city': 1 });
+creatorProfileSchema.index({ 'personalInfo.location.country': 1 });
+creatorProfileSchema.index({ 'socialMedia.primaryPlatform': 1 });
+
+// Compound indexes for complex queries
+creatorProfileSchema.index({ 
+  status: 1, 
+  'publishInfo.isPublished': 1, 
+  'professionalInfo.categories': 1 
+});
+creatorProfileSchema.index({ 
+  status: 1, 
+  'publishInfo.isPublished': 1, 
+  'pricing.standard.price': 1 
+});
+creatorProfileSchema.index({ 
+  status: 1, 
+  'publishInfo.isPublished': 1, 
+  'metrics.ratings.average': -1 
+});
+creatorProfileSchema.index({ 
+  status: 1, 
+  'publishInfo.isPublished': 1, 
+  'socialMedia.totalReach': -1 
+});
+
+// Text search index for better search performance
+creatorProfileSchema.index({
+  'personalInfo.username': 'text',
+  'personalInfo.fullName': 'text',
+  'personalInfo.bio': 'text',
+  'professionalInfo.title': 'text',
+  'descriptionFaq.briefDescription': 'text'
+});
+
 export interface ICreatorProfile extends mongoose.Document {
   userId: mongoose.Schema.Types.ObjectId;
   profileUrl: string;

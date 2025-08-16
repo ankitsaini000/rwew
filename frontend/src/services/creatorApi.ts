@@ -27,7 +27,7 @@ export const getCreatorByUsername = async (username: string) => {
       const timeoutId = setTimeout(() => controller.abort(), 8000); // 8 second timeout
       
       // Get API base URL from environment or config
-      const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5001/api';
+      const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || 'https://rwew.onrender.com/api';
       console.log(`Using API base URL: ${API_BASE_URL} to fetch creator: ${username}`);
       
       const response = await fetch(`${API_BASE_URL}/creators/${username}`, {
@@ -111,7 +111,7 @@ export const getCreatorByUsername = async (username: string) => {
         console.log('Attempting direct MongoDB fetch');
         
         // Get API base URL for backup attempt
-        const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5001/api';
+        const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || 'https://rwew.onrender.com/api';
         
         // Try a different API endpoint as a fallback
         const backupResponse = await fetch(`${API_BASE_URL}/creators/profile/${username}`, {
@@ -715,7 +715,7 @@ export const getCreatorDashboardMetrics = async () => {
     
     // Try with a direct fetch to the backend with proper URL
     try {
-      const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5001/api';
+      const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || 'https://rwew.onrender.com/api';
       console.log(`Trying direct fetch to: ${API_BASE_URL}/creator-dashboard/metrics`);
       
       const directResponse = await fetch(`${API_BASE_URL}/creator-dashboard/metrics`, {
@@ -1001,7 +1001,7 @@ export const verifyCreatorEmailCode = async (email: string, code: string) => {
 // Send phone verification OTP for creator
 export const submitCreatorPhoneVerification = async (phone: string) => {
   const token = typeof window !== 'undefined' ? localStorage.getItem('token') : null;
-  const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5001/api';
+  const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || 'https://rwew.onrender.com/api';
   const response = await fetch(`${API_BASE_URL}/creator-verification/phone`, {
     method: 'POST',
     headers: {
@@ -1016,7 +1016,7 @@ export const submitCreatorPhoneVerification = async (phone: string) => {
 // Verify creator phone OTP code
 export const verifyCreatorPhoneCode = async (phone: string, code: string) => {
   const token = typeof window !== 'undefined' ? localStorage.getItem('token') : null;
-  const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5001/api';
+  const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || 'https://rwew.onrender.com/api';
   const response = await fetch(`${API_BASE_URL}/creator-verification/phone/verify`, {
     method: 'POST',
     headers: {

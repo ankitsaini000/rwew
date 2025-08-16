@@ -1,4 +1,4 @@
-const API_BASE = process.env.NEXT_PUBLIC_API_BASE || 'http://localhost:5001/api/brand-preferences';
+const API_BASE = process.env.NEXT_PUBLIC_API_BASE || 'https://rwew.onrender.com/api/brand-preferences';
 
 export async function createBrandPreference(data: any) {
   const res = await fetch(`${API_BASE}`, {

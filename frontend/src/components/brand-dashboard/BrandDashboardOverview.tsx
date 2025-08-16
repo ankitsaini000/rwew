@@ -354,7 +354,7 @@ export default function BrandDashboardOverview({
           setBrandUserLoading(false);
           return;
         }
-        const res = await fetch('http://localhost:5001/api/users/me', {
+        const res = await fetch('https://rwew.onrender.com/api/users/me', {
           headers: { 'Authorization': `Bearer ${token}` }
         });
         if (!res.ok) {
@@ -706,7 +706,7 @@ export default function BrandDashboardOverview({
             <div 
               id="creators-slider" 
               ref={sliderRef}
-              className="flex overflow-x-auto pb-4 snap-x snap-mandatory scrollbar-hide hide-scrollbar"
+              className="flex overflow-x-auto pb-4 snap-x snap-mandatory scrollbar-hide hide-scrollbar mobile-smooth-scroll"
               style={{ 
                 scrollbarWidth: 'none',
                 msOverflowStyle: 'none',

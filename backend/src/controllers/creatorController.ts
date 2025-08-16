@@ -1959,220 +1959,253 @@ export const testGalleryStorage = asyncHandler(async (req: Request, res: Respons
  */
 export const getPublishedCreators = asyncHandler(async (req: Request, res: Response) => {
   try {
-    console.log('Fetching published creators with filters');
-    const { 
-      searchQuery, 
-      category, 
-      platform, 
-      priceMin, 
-      priceMax, 
-      followersMin, 
-      followersMax, 
-      sortBy,
+    const startTime = Date.now();
+    
+    // Extract and validate query parameters
+    const {
+      page = 1,
+      limit = 20,
+      category,
+      subcategory,
       tags,
-      contentTypes
+      platform,
+      priceMin,
+      priceMax,
+      followersMin,
+      followersMax,
+      location,
+      sortBy = 'relevance',
+      searchQuery
     } = req.query;
-    
-    // Parse pagination parameters
-    const page = parseInt(req.query.page as string) || 1;
-    const limit = parseInt(req.query.limit as string) || 9;
-    const skip = (page - 1) * limit;
-    
-    // Build filter object
-    const filter: any = { 
+
+    // Validate pagination parameters
+    const pageNum = Math.max(1, Number(page));
+    const limitNum = Math.min(100, Math.max(1, Number(limit))); // Cap at 100
+    const skip = (pageNum - 1) * limitNum;
+
+    console.log(`Fetching creators - Page: ${pageNum}, Limit: ${limitNum}, Skip: ${skip}`);
+
+    // Build optimized filter query
+    const filter: any = {
       status: 'published',
-      'publishInfo.isPublished': true,
-      isActive: { $ne: false } // Exclude deactivated creators
+      'publishInfo.isPublished': true
     };
-    
-    // Add search query if provided
-    if (searchQuery) {
-      // Create a text search across multiple fields including tags and content types
-      const searchRegex = new RegExp(searchQuery as string, 'i');
-      filter.$or = [
-        { 'personalInfo.username': searchRegex },
-        { 'personalInfo.fullName': searchRegex },
-        { 'personalInfo.bio': searchRegex },
-        { 'professionalInfo.title': searchRegex },
-        { 'professionalInfo.categories': searchRegex },
-        { 'professionalInfo.subcategories': searchRegex },
-        { 'professionalInfo.tags': searchRegex },
-        { 'professionalInfo.contentTypes': searchRegex },
-        { 'personalInfo.location': searchRegex },
-        { 'descriptionFaq.briefDescription': searchRegex },
-        { 'descriptionFaq.specialties': searchRegex },
-        { 'galleryPortfolio.images.tags': searchRegex },
-        { 'galleryPortfolio.videos.tags': searchRegex },
-        { 'portfolio.tags': searchRegex }
-      ];
-    }
-    
-    // Add category filter if provided
-    if (category && category !== 'All Categories') {
+
+    // Add category filter with index optimization
+    if (category) {
       filter['professionalInfo.categories'] = category;
     }
-    
-    // Add platform filter if provided
+
+    // Add subcategory filter
+    if (subcategory) {
+      filter['professionalInfo.subcategories'] = subcategory;
+    }
+
+    // Add tags filter with $in operator for better performance
+    if (tags && Array.isArray(tags) && tags.length > 0) {
+      filter['professionalInfo.tags'] = { $in: tags };
+    }
+
+    // Add platform filter
     if (platform && platform !== 'All Platforms') {
-      // Social media platform checks - match if they have that platform set up
       const platformKey = (platform as string).toLowerCase();
       filter[`socialMedia.socialProfiles.${platformKey}.url`] = { $exists: true, $ne: '' };
     }
-    
-    // Add tags filter if provided
-    if (tags) {
-      const tagsArray = Array.isArray(tags) ? tags : [tags];
-      filter['professionalInfo.tags'] = { $in: tagsArray };
+
+    // Add price range filter with index optimization
+    if (priceMin || priceMax) {
+      filter['pricing.standard.price'] = {};
+      if (priceMin) filter['pricing.standard.price'].$gte = Number(priceMin);
+      if (priceMax) filter['pricing.standard.price'].$lte = Number(priceMax);
     }
-    
-    // Add content types filter if provided
-    if (contentTypes) {
-      const contentTypesArray = Array.isArray(contentTypes) ? contentTypes : [contentTypes];
-      filter['professionalInfo.contentTypes'] = { $in: contentTypesArray };
+
+    // Add followers range filter
+    if (followersMin || followersMax) {
+      filter['socialMedia.totalReach'] = {};
+      if (followersMin) filter['socialMedia.totalReach'].$gte = Number(followersMin);
+      if (followersMax) filter['socialMedia.totalReach'].$lte = Number(followersMax);
     }
-    
-    // Add price range filters if provided
-    if (priceMin) {
-      filter['pricing.standard.price'] = { $gte: parseInt(priceMin as string) };
+
+    // Add location filter
+    if (location) {
+      const locationRegex = new RegExp(location as string, 'i');
+      filter['personalInfo.location.city'] = locationRegex;
     }
-    
-    if (priceMax) {
-      if (!filter['pricing.standard.price']) {
-        filter['pricing.standard.price'] = {};
-      }
-      filter['pricing.standard.price'].$lte = parseInt(priceMax as string);
+
+    // Add text search with text index optimization
+    if (searchQuery) {
+      const searchRegex = new RegExp(searchQuery as string, 'i');
+      filter.$text = { $search: searchQuery as string };
     }
+
+    console.log('Applied filters:', JSON.stringify(filter, null, 2));
+
+    // Determine optimal sort order based on filters and sort preference
+    let sortOptions: any = {};
     
-    // Add follower count filters if provided
-    if (followersMin) {
-      filter['socialMedia.totalReach'] = { $gte: parseInt(followersMin as string) };
-    }
-    
-    if (followersMax) {
-      if (!filter['socialMedia.totalReach']) {
-        filter['socialMedia.totalReach'] = {};
-      }
-      filter['socialMedia.totalReach'].$lte = parseInt(followersMax as string);
-    }
-    
-    // Determine sort order
-    let sortOptions: any = { 'metrics.profileViews': -1 }; // Default sort by popularity
-    
-    if (sortBy) {
-      switch (sortBy) {
-        case 'price-low':
-          sortOptions = { 'pricing.standard.price': 1 };
-          break;
-        case 'price-high':
-          sortOptions = { 'pricing.standard.price': -1 };
-          break;
-        case 'rating':
-          sortOptions = { 'metrics.ratings.average': -1 };
-          break;
-        case 'followers':
-          sortOptions = { 'socialMedia.totalReach': -1 };
-          break;
-        case 'relevance':
-        default:
-          // For relevance, use a complex sort that considers multiple factors
-          sortOptions = {
-            'metrics.profileViews': -1,
-            'metrics.ratings.average': -1
+    switch (sortBy) {
+      case 'price-low':
+        sortOptions = { 'pricing.standard.price': 1 };
+        break;
+      case 'price-high':
+        sortOptions = { 'pricing.standard.price': -1 };
+        break;
+      case 'rating':
+        sortOptions = { 'metrics.ratings.average': -1, 'metrics.profileViews': -1 };
+        break;
+      case 'followers':
+        sortOptions = { 'socialMedia.totalReach': -1, 'metrics.profileViews': -1 };
+        break;
+      case 'relevance':
+      default:
+        // Smart relevance sorting considering multiple factors
+        if (searchQuery) {
+          // If searching, prioritize text relevance
+          sortOptions = { score: { $meta: 'textScore' }, 'metrics.profileViews': -1 };
+        } else {
+          // Default to popularity-based sorting
+          sortOptions = { 
+            'metrics.profileViews': -1, 
+            'metrics.ratings.average': -1,
+            'socialMedia.totalReach': -1
           };
-      }
+        }
+        break;
     }
-    
-    // Count total documents matching the filter
-    const total = await CreatorProfile.countDocuments(filter);
-    console.log(`Found ${total} creators matching filters`);
-    
-    // Get creators with pagination
-    const creators = await CreatorProfile.find(filter)
-      .select('-__v')
-      .populate('userId', 'fullName username email avatar')
-      .sort(sortOptions)
-      .skip(skip)
-      .limit(limit);
-    
-    console.log(`Returning ${creators.length} creators for page ${page}`);
-    
-    // Process creators to ensure they have all required fields
-    const processedCreators = await Promise.all(creators.map(async (creator: any) => {
-      const creatorId = creator._id ? creator._id.toString() : '';
-      
-      // Extract username from userId if it exists
-      let username = '';
-      if (creator.userId && typeof creator.userId === 'object') {
-        if (creator.userId.username) {
-          username = creator.userId.username;
+
+    console.log('Sort options:', JSON.stringify(sortOptions, null, 2));
+
+    // Use aggregation pipeline for better performance on complex queries
+    const aggregationPipeline: any[] = [
+      { $match: filter },
+      {
+        $addFields: {
+          // Add computed fields for better sorting
+          popularityScore: {
+            $add: [
+              { $multiply: ['$metrics.profileViews', 0.4] },
+              { $multiply: ['$metrics.ratings.average', 0.3] },
+              { $multiply: ['$socialMedia.totalReach', 0.3] }
+            ]
+          }
         }
       }
-      
-      // If no username from userId, try personalInfo
-      if (!username && creator.personalInfo && creator.personalInfo.username) {
-        username = creator.personalInfo.username;
+    ];
+
+    // Add text search scoring if searching
+    if (searchQuery) {
+      aggregationPipeline.push({
+        $addFields: {
+          textScore: { $meta: 'textScore' }
+        }
+      });
+    }
+
+    // Add sorting
+    aggregationPipeline.push({ $sort: sortOptions });
+
+    // Add pagination
+    aggregationPipeline.push(
+      { $skip: skip },
+      { $limit: limitNum }
+    );
+
+    // Add lookup for user data
+    aggregationPipeline.push({
+      $lookup: {
+        from: 'users',
+        localField: 'userId',
+        foreignField: '_id',
+        as: 'userData'
+      }
+    });
+
+    // Unwind and project only needed fields
+    aggregationPipeline.push(
+      { $unwind: '$userData' },
+      {
+        $project: {
+          _id: 1,
+          personalInfo: 1,
+          professionalInfo: 1,
+          socialMedia: 1,
+          pricing: 1,
+          metrics: 1,
+          descriptionFaq: 1,
+          'userData.fullName': 1,
+          'userData.username': 1,
+          'userData.email': 1,
+          'userData.avatar': 1,
+          popularityScore: 1,
+          textScore: 1
+        }
+      }
+    );
+
+    // Execute aggregation pipeline
+    const creators = await CreatorProfile.aggregate(aggregationPipeline);
+    
+    // Get total count for pagination (using separate count query for better performance)
+    const total = await CreatorProfile.countDocuments(filter);
+
+    console.log(`Found ${total} creators matching filters, returning ${creators.length} for page ${pageNum}`);
+
+    // Process creators to ensure they have all required fields
+    const processedCreators = creators.map(creator => {
+      // Ensure all required fields exist with defaults
+      if (!creator.metrics) {
+        creator.metrics = {
+          profileViews: 0,
+          ratings: { average: 0, count: 0 },
+          projectsCompleted: 0
+        };
       }
       
-      // If still no username, create a fallback
-      if (!username) {
-        username = `user_${creatorId.substring(0, 8)}`;
+      if (!creator.pricing?.standard) {
+        creator.pricing = { standard: { price: 0, currency: 'USD' } };
+      }
+      
+      if (!creator.socialMedia?.totalReach) {
+        creator.socialMedia = { ...creator.socialMedia, totalReach: 0 };
       }
 
-      // Calculate actual ratings and reviews from Review model
-      let actualRating = 0;
-      let actualReviewCount = 0;
-      try {
-        const creatorIdForReviews = creator.userId?._id || creatorId;
-        const reviews = await Review.find({ creatorId: creatorIdForReviews });
-        if (reviews.length > 0) {
-          actualReviewCount = reviews.length;
-          const totalRating = reviews.reduce((sum: number, review: any) => sum + (review.rating || 0), 0);
-          actualRating = totalRating / actualReviewCount;
-        }
-      } catch (error) {
-        console.error('Error calculating ratings for creator:', creatorId, error);
-      }
-      
-      // Return the processed creator data
-      return {
-        _id: creatorId,
-        userId: creator.userId,
-        username, // Add top-level username for easier access
-        fullName: creator.userId && creator.userId.fullName ? creator.userId.fullName : 'Creator',
-        title: creator.professionalInfo?.title || '', // Add title field
-        personalInfo: creator.personalInfo || {},
-        professionalInfo: creator.professionalInfo || {},
-        descriptionFaq: creator.descriptionFaq || {},
-        socialMedia: creator.socialMedia || {},
-        pricing: creator.pricing || {},
-        gallery: creator.gallery || {},
-        portfolio: creator.portfolio || [],
-        metrics: creator.metrics || {},
-        rating: actualRating > 0 ? parseFloat(actualRating.toFixed(1)) : 
-                (creator.metrics && creator.metrics.ratings ? creator.metrics.ratings.average || 0 : 0),
-        reviewCount: actualReviewCount > 0 ? actualReviewCount : 
-                    (creator.metrics && creator.metrics.ratings ? creator.metrics.ratings.count || 0 : 0),
-        isActive: creator.isActive !== false, // Add isActive for frontend filtering
-      };
-    }));
-    
-    // Return paginated results with metadata
-    res.status(200).json({
-      success: true,
-      count: total,
-      pagination: {
-        total,
-        pages: Math.ceil(total / limit),
-        page,
-        limit,
-        hasMore: skip + creators.length < total
-      },
-      data: processedCreators
+      return creator;
     });
+
+    const endTime = Date.now();
+    const queryTime = endTime - startTime;
+
+    // Add performance headers
+    res.setHeader('X-Query-Time', `${queryTime}ms`);
+    res.setHeader('X-Total-Count', total.toString());
+    res.setHeader('X-Page-Count', Math.ceil(total / limitNum).toString());
+
+    // Log performance metrics
+    console.log(`Query completed in ${queryTime}ms - ${creators.length} creators returned`);
+
+    res.json({
+      success: true,
+      data: processedCreators,
+      pagination: {
+        page: pageNum,
+        limit: limitNum,
+        total,
+        pages: Math.ceil(total / limitNum)
+      },
+      performance: {
+        queryTime: `${queryTime}ms`,
+        filtersApplied: Object.keys(filter).length,
+        sortMethod: sortBy
+      }
+    });
+
   } catch (error) {
-    console.error('Error fetching published creators:', error);
-    res.status(500);
-    throw new Error('Server error fetching published creators');
+    console.error('Error in getPublishedCreators:', error);
+    res.status(500).json({
+      success: false,
+      message: 'Failed to fetch creators',
+      error: process.env.NODE_ENV === 'development' ? (error as Error).message : 'Internal server error'
+    });
   }
 });
 
@@ -2890,7 +2923,7 @@ export const getSimilarCreators = asyncHandler(async (req: Request, res: Respons
     }
 
     if (platform && platform !== 'All Platforms') {
-      const platformKey = platform.toLowerCase();
+      const platformKey = (platform as string).toLowerCase();
       similarityFilter[`socialMedia.socialProfiles.${platformKey}.url`] = { $exists: true, $ne: '' };
     }
 

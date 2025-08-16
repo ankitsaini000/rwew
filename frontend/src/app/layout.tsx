@@ -31,7 +31,7 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="en" className={`${inter.variable} ${poppins.variable}`}>
-      <body className={`antialiased font-sans`}>
+      <body className={`antialiased font-sans overflow-x-hidden`}>
         <ClientProviders>
           {children}
           <OfflineOverlay />

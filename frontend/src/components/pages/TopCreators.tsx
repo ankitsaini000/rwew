@@ -163,7 +163,7 @@ export const TopCreators = () => {
           {/* Creators Container - Grid on desktop, horizontal scroll on mobile */}
           <div 
             ref={scrollContainerRef}
-            className="flex md:grid md:grid-cols-2 lg:grid-cols-3 gap-4 md:gap-6 overflow-x-auto pb-4 md:pb-0 hide-scrollbar snap-x snap-mandatory touch-pan-x"
+            className="flex md:grid md:grid-cols-2 lg:grid-cols-3 gap-4 md:gap-6 overflow-x-auto pb-4 md:pb-0 hide-scrollbar snap-x snap-mandatory touch-pan-x mobile-smooth-scroll"
           >
             {filteredCreators.map((creator) => (
               <div

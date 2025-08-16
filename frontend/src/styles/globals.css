@@ -98,6 +98,50 @@ html {
   scrollbar-width: none;
 }
 
+/* Enhanced mobile scrolling for creator cards */
+.mobile-smooth-scroll {
+  -webkit-overflow-scrolling: touch;
+  scroll-behavior: smooth;
+  overscroll-behavior: contain;
+  scroll-snap-type: x mandatory;
+  scroll-snap-align: start;
+  touch-action: pan-x;
+  -webkit-user-select: none;
+  user-select: none;
+}
+
+/* Improved touch scrolling */
+.mobile-smooth-scroll::-webkit-scrollbar {
+  display: none;
+}
+
+.mobile-smooth-scroll {
+  -ms-overflow-style: none;
+  scrollbar-width: none;
+}
+
+/* Smooth transitions for mobile */
+.mobile-card-transition {
+  transition: transform 0.2s ease-out, opacity 0.2s ease-out;
+  will-change: transform, opacity;
+}
+
+/* Prevent text selection during scrolling */
+.mobile-smooth-scroll * {
+  -webkit-user-select: none;
+  -moz-user-select: none;
+  -ms-user-select: none;
+  user-select: none;
+}
+
+/* Allow text selection in specific areas */
+.mobile-smooth-scroll .selectable-text {
+  -webkit-user-select: text;
+  -moz-user-select: text;
+  -ms-user-select: text;
+  user-select: text;
+}
+
 /* Subtle card animations */
 @keyframes card-appear {
   from { opacity: 0; transform: translateY(10px); }

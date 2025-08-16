@@ -11,6 +11,7 @@ import { initializeSocketIO } from './sockets';
 import session from 'express-session';
 import { configurePassport } from './config/passport';
 import routes from './routes';
+import redisClient from './config/redis';
 
 // Routes
 import userRoutes from './routes/userRoutes';
@@ -52,6 +53,13 @@ dotenv.config();
 // Connect to MongoDB
 connectDB();
 
+// Connect to Redis
+redisClient.connect().then(() => {
+  console.log('Redis connection initialized');
+}).catch((error) => {
+  console.warn('Redis connection failed, continuing without caching:', error.message);
+});
+
 // Initialize Express app
 const app = express();
 
@@ -65,7 +73,7 @@ const io = initializeSocketIO(server);
 // Make io available globally
 app.set('io', io);
 
-// Middleware
+// Enhanced middleware configuration
 app.use(cors({
   origin: function (origin, callback) {
     const allowed = [
@@ -95,12 +103,18 @@ app.use(helmet({
 app.use(express.json());
 app.use(express.urlencoded({ extended: false }));
 
-// Session configuration for passport
+// Session configuration for passport with optimized settings
 app.use(session({
   secret: process.env.SESSION_SECRET || 'keyboard cat',
   resave: false,
   saveUninitialized: false,
-  cookie: { secure: process.env.NODE_ENV === 'production' }
+  cookie: {
+    secure: process.env.NODE_ENV === 'production',
+    httpOnly: true,
+    maxAge: 24 * 60 * 60 * 1000, // 24 hours
+    sameSite: 'lax'
+  },
+  name: 'sessionId' // Custom session name for security
 }));
 
 // Set up passport

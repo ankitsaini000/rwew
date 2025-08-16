@@ -84,15 +84,24 @@ export const Header: React.FC = () => {
   // Close dropdown on outside click
   useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {
-      if (categoriesRef.current && !categoriesRef.current.contains(event.target as Node)) {
+      // Only close if the click is completely outside the categories section
+      // AND not on any element inside the dropdown
+      if (categoriesRef.current && 
+          !categoriesRef.current.contains(event.target as Node) &&
+          // Check if the click target is not inside the dropdown
+          !(event.target as HTMLElement).closest('.animate-fadeInUp')) {
         setCategoriesDropdownOpen(false);
       }
     };
+    
+    // Only add the event listener when the dropdown is open
     if (categoriesDropdownOpen) {
+      // Use mousedown instead of click to handle the event earlier
       document.addEventListener("mousedown", handleClickOutside);
     } else {
       document.removeEventListener("mousedown", handleClickOutside);
     }
+    
     return () => {
       document.removeEventListener("mousedown", handleClickOutside);
     };
@@ -141,13 +150,30 @@ export const Header: React.FC = () => {
       handleShowAuthModal as EventListener
     );
 
+    // Close mobile menu when clicking outside
+    const handleClickOutsideMobileMenu = (event: MouseEvent) => {
+      // Check if mobile menu is open and the click is outside the menu and not on the menu toggle button
+      if (isMobileMenuOpen && 
+          !(event.target as HTMLElement).closest('.md\\:hidden') && 
+          !(event.target as HTMLElement).closest('button[aria-label]')) {
+        setIsMobileMenuOpen(false);
+      }
+    };
+
+    if (isMobileMenuOpen) {
+      document.addEventListener("mousedown", handleClickOutsideMobileMenu);
+    } else {
+      document.removeEventListener("mousedown", handleClickOutsideMobileMenu);
+    }
+
     return () => {
       document.removeEventListener(
         "show-auth-modal",
         handleShowAuthModal as EventListener
       );
+      document.removeEventListener("mousedown", handleClickOutsideMobileMenu);
     };
-  }, []);
+  }, [isMobileMenuOpen]);
 
   const handleBecomingCreator = () => {
     if (isBecomingCreatorPage) {
@@ -172,23 +198,25 @@ export const Header: React.FC = () => {
           <div
             className="relative group"
             ref={categoriesRef}
-            onMouseEnter={() => setCategoriesDropdownOpen(true)}
-            onMouseLeave={() => setCategoriesDropdownOpen(false)}
           >
             <button
               className="flex items-center space-x-2 text-gray-700 hover:text-purple-600 transition-colors"
-              onClick={() => setCategoriesDropdownOpen(true)}
               type="button"
+              onClick={() => setCategoriesDropdownOpen(!categoriesDropdownOpen)}
+              aria-expanded={categoriesDropdownOpen}
             >
               <span>Categories</span>
-              <ChevronDown className="h-4 w-4" />
+              <ChevronDown className={`h-4 w-4 transition-transform ${categoriesDropdownOpen ? 'rotate-180' : ''}`} />
             </button>
             {categoriesDropdownOpen && (
               <div
-                className="absolute left-0 mt-2 w-56 glass-morphism py-2 z-50 animate-fadeInUp"
+                className="absolute left-0 mt-2 w-64 bg-white rounded-lg shadow-lg border border-gray-100 py-3 z-50 animate-fadeInUp"
               >
                 {categoriesLoading && (
-                  <div className="px-4 py-2 text-gray-500 text-sm">Loading...</div>
+                  <div className="px-4 py-2 text-gray-500 text-sm flex items-center justify-center">
+                    <span className="mr-2">Loading</span>
+                    <div className="animate-spin h-4 w-4 border-2 border-purple-500 rounded-full border-t-transparent"></div>
+                  </div>
                 )}
                 {categoriesError && (
                   <div className="px-4 py-2 text-red-500 text-sm">{categoriesError}</div>
@@ -196,22 +224,25 @@ export const Header: React.FC = () => {
                 {!categoriesLoading && !categoriesError && categories.length === 0 && (
                   <div className="px-4 py-2 text-gray-500 text-sm">No categories found</div>
                 )}
-                {!categoriesLoading && !categoriesError && categories.map((cat: any) => (
-                  <button
-                    key={cat._id || cat.name}
-                    className="block w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-100"
-                    onClick={() => {
-                      // TODO: navigate or filter by category
-                      console.log("Category clicked:", cat.name);
-                    }}
-                  >
-                    {cat.name}
-                  </button>
-                ))}
+                <div className="max-h-60 overflow-y-auto">
+                  {!categoriesLoading && !categoriesError && categories.map((cat: any) => (
+                    <button
+                      key={cat._id || cat.name}
+                      className="block w-full text-left px-4 py-3 text-sm text-gray-700 hover:bg-purple-50 hover:text-purple-600 transition-colors"
+                      onClick={() => {
+                        // Navigate to category page
+                        router.push(`/categories/${encodeURIComponent(cat.name)}`);
+                        setCategoriesDropdownOpen(false);
+                      }}
+                    >
+                      {cat.name}
+                    </button>
+                  ))}
+                </div>
               </div>
             )}
           </div>
-          <Link href="#" className="text-gray-700 hover:text-purple-600 transition-colors">
+          <Link href="/support" className="text-gray-700 hover:text-purple-600 transition-colors">
             Contact us
           </Link>
           {!user && (
@@ -299,7 +330,50 @@ export const Header: React.FC = () => {
       {isMobileMenuOpen && (
         <div className="md:hidden border-t border-gray-100 bg-white/70 backdrop-blur-xl">
           <div className="container mx-auto px-4 py-4 space-y-3">
-            <Link href="#" className="block text-gray-700 hover:text-purple-600">Contact us</Link>
+            {/* Mobile Categories Dropdown */}
+            <div className="relative">
+              <button
+                onClick={() => setCategoriesDropdownOpen(!categoriesDropdownOpen)}
+                className="flex items-center justify-between w-full py-2 text-gray-700 hover:text-purple-600"
+                type="button"
+                aria-expanded={categoriesDropdownOpen}
+              >
+                <span>Categories</span>
+                <ChevronDown className={`h-4 w-4 transition-transform ${categoriesDropdownOpen ? 'rotate-180' : ''}`} />
+              </button>
+              {categoriesDropdownOpen && (
+                <div className="bg-white/90 rounded-lg shadow-md border border-gray-100 py-2 mt-1 z-50 animate-fadeInUp">
+                  {categoriesLoading && (
+                    <div className="px-4 py-2 text-gray-500 text-sm flex items-center justify-center">
+                      <span className="mr-2">Loading</span>
+                      <div className="animate-spin h-4 w-4 border-2 border-purple-500 rounded-full border-t-transparent"></div>
+                    </div>
+                  )}
+                  {categoriesError && (
+                    <div className="px-4 py-2 text-red-500 text-sm">{categoriesError}</div>
+                  )}
+                  {!categoriesLoading && !categoriesError && categories.length === 0 && (
+                    <div className="px-4 py-2 text-gray-500 text-sm">No categories found</div>
+                  )}
+                  <div className="max-h-60 overflow-y-auto">
+                    {!categoriesLoading && !categoriesError && categories.map((cat: any) => (
+                      <button
+                        key={cat._id || cat.name}
+                        className="block w-full text-left px-4 py-3 text-sm text-gray-700 hover:bg-purple-50 hover:text-purple-600 transition-colors"
+                        onClick={() => {
+                          router.push(`/categories/${encodeURIComponent(cat.name)}`);
+                          setCategoriesDropdownOpen(false);
+                          setIsMobileMenuOpen(false);
+                        }}
+                      >
+                        {cat.name}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+              )}
+            </div>
+            <Link href="/support" className="block text-gray-700 hover:text-purple-600">Contact us</Link>
             {!user && (
               <>
                 <button

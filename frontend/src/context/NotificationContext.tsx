@@ -24,24 +24,49 @@ export const NotificationProvider: React.FC<NotificationProviderProps> = ({ chil
     
     if (user && token) {
       console.log('User authenticated, initializing socket and fetching notifications');
-      const socket = initializeSocket(token);
       
-      // Join user's personal room
-      joinUserRoom(user._id);
+      // Initialize socket connection with error handling
+      let socket: any = null;
+      try {
+        socket = initializeSocket(token);
+        
+        // Join user's personal room
+        joinUserRoom(user._id);
 
-      // Listen for new notifications
-      socket.on('newNotification', (data: { notification: Notification }) => {
-        console.log('Received new notification:', data.notification);
-        addNotification(data.notification);
-        setUnreadCount(prev => prev + 1);
-      });
+        // Listen for new notifications
+        socket.on('newNotification', (data: { notification: Notification }) => {
+          console.log('Received new notification:', data.notification);
+          addNotification(data.notification);
+          setUnreadCount(prev => prev + 1);
+        });
+
+        // Listen for connection errors
+        socket.on('connect_error', (error: any) => {
+          console.error('Socket connection error:', error.message);
+        });
+
+        // Listen for disconnection
+        socket.on('disconnect', (reason: string) => {
+          console.log('Socket disconnected:', reason);
+        });
+
+      } catch (error) {
+        console.error('Failed to initialize socket connection:', error);
+        // Continue without socket - notifications will still work via polling
+      }
 
       // Fetch initial notifications
       fetchNotifications();
 
       return () => {
-        console.log('Cleaning up socket connection');
-        disconnectSocket();
+        console.log('🧹 Cleaning up socket connection');
+        try {
+          if (socket) {
+            disconnectSocket();
+          }
+        } catch (error) {
+          console.error('Error during socket cleanup:', error);
+        }
       };
     } else {
       console.log('User not authenticated, skipping initialization');

@@ -3,6 +3,28 @@ import { useAuth } from '@/context/AuthContext';
 import { formatDistanceToNow } from 'date-fns';
 import { Archive, Trash2 } from 'lucide-react';
 
+// Custom scrollbar styles
+const scrollbarStyles = `
+  .custom-scrollbar::-webkit-scrollbar {
+    width: 6px;
+  }
+  .custom-scrollbar::-webkit-scrollbar-track {
+    background: #f1f5f9;
+    border-radius: 3px;
+  }
+  .custom-scrollbar::-webkit-scrollbar-thumb {
+    background: #cbd5e1;
+    border-radius: 3px;
+  }
+  .custom-scrollbar::-webkit-scrollbar-thumb:hover {
+    background: #94a3b8;
+  }
+  .custom-scrollbar {
+    scrollbar-width: thin;
+    scrollbar-color: #cbd5e1 #f1f5f9;
+  }
+`;
+
 interface Conversation {
   _id: string;
   participants: Array<{
@@ -102,17 +124,19 @@ export default function ChatSidebar({ onSelectConversation, selectedConversation
   }
 
   return (
-    <div className="flex flex-col h-full">
-      <div className="p-4 border-b border-gray-200">
-        <input
-          type="text"
-          placeholder="Search conversations..."
-          value={searchQuery}
-          onChange={(e) => setSearchQuery(e.target.value)}
-          className="w-full px-3 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
-        />
-      </div>
-      <div className="flex-1 overflow-y-auto">
+    <>
+      <style dangerouslySetInnerHTML={{ __html: scrollbarStyles }} />
+      <div className="flex flex-col h-screen w-full bg-white" style={{ height: '100vh', maxHeight: '100vh' }}>
+        <div className="flex-shrink-0 p-4 border-b border-gray-200 bg-white">
+          <input
+            type="text"
+            placeholder="Search conversations..."
+            value={searchQuery}
+            onChange={(e) => setSearchQuery(e.target.value)}
+            className="w-full px-3 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-500 bg-gray-50"
+          />
+        </div>
+        <div className="flex-1 overflow-y-auto custom-scrollbar">
         {filteredConversations.map((conversation) => {
           const otherParticipant = conversation.participants.find(p => p._id !== token);
           if (!otherParticipant) return null;
@@ -184,5 +208,6 @@ export default function ChatSidebar({ onSelectConversation, selectedConversation
         })}
       </div>
     </div>
+    </>
   );
 } 

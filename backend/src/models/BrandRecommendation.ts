@@ -14,6 +14,11 @@ const brandRecommendationSchema = new Schema<IBrandRecommendation>({
   timestamps: true // This adds createdAt and updatedAt automatically
 });
 
+// Create indexes for better query performance
+brandRecommendationSchema.index({ brand_id: 1 }, { unique: true });
+brandRecommendationSchema.index({ last_updated: -1 });
+brandRecommendationSchema.index({ 'recommended_creators': 1 });
+
 const BrandRecommendation = mongoose.model<IBrandRecommendation>('BrandRecommendation', brandRecommendationSchema);
 
 export default BrandRecommendation;

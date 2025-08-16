@@ -3743,7 +3743,7 @@ export const getMyOrders = async (page = 1, limit = 10) => {
     
     console.log('Fetching user orders, page:', page, 'limit:', limit);
     
-    const response = await fetch(`http://localhost:5001/api/orders/myorders?page=${page}&limit=${limit}`, {
+    const response = await fetch(`https://rwew.onrender.com/api/orders/myorders?page=${page}&limit=${limit}`, {
       method: 'GET',
       headers: {
         'Content-Type': 'application/json',
@@ -3823,7 +3823,7 @@ export const getBrandDashboardStats = async () => {
     
     // Fallback: Calculate statistics from orders data
     // Fetch all orders (without pagination)
-    const ordersResponse = await fetch('http://localhost:5001/api/orders/myorders?limit=100', {
+    const ordersResponse = await fetch('https://rwew.onrender.com/api/orders/myorders?limit=100', {
       method: 'GET',
       headers: {
         'Content-Type': 'application/json',
@@ -3879,7 +3879,7 @@ export const getBrandDashboardStats = async () => {
     // Get member since date (registration date)
     let memberSince = '';
     try {
-      const userResponse = await fetch('http://localhost:5001/api/users/me', {
+      const userResponse = await fetch('https://rwew.onrender.com/api/users/me', {
         method: 'GET',
         headers: {
           'Content-Type': 'application/json',

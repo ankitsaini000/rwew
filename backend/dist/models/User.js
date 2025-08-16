@@ -42,6 +42,7 @@ const userSchema = new mongoose_1.Schema({
         unique: true,
         lowercase: true,
         trim: true,
+        index: true, // Add index for faster queries
     },
     passwordHash: {
         type: String,
@@ -66,6 +67,7 @@ const userSchema = new mongoose_1.Schema({
         type: String,
         enum: ['client', 'creator', 'admin', 'brand'],
         default: 'client',
+        index: true, // Add index for role-based queries
     },
     isVerified: {
         type: Boolean,
@@ -183,5 +185,11 @@ userSchema.virtual('name')
     .get(function () {
     return this.fullName;
 });
+// Add compound indexes for common query patterns
+userSchema.index({ role: 1, isActive: 1 }); // For querying active users by role
+userSchema.index({ email: 1, role: 1 }); // For authentication with role check
+userSchema.index({ facebookId: 1 }, { sparse: true }); // For Facebook login
+userSchema.index({ username: 1 }, { sparse: true }); // For username lookup
+userSchema.index({ isVerified: 1, role: 1 }); // For verified users by role
 const User = mongoose_1.default.model('User', userSchema);
 exports.default = User;

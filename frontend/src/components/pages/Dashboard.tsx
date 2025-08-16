@@ -68,6 +68,78 @@ const categoryIcons: Record<string, string> = {
   "Others": "📁"
 };
 
+// Comprehensive pricing utility function
+const getStartingPrice = (creator: any): string | number | undefined => {
+  // Debug logging for pricing
+  console.log('💰 Pricing Debug - Creator:', creator?.name || creator?.fullName || creator?.username);
+  console.log('💰 Pricing Debug - Raw startingPrice:', creator?.startingPrice);
+  console.log('💰 Pricing Debug - Raw pricing object:', creator?.pricing);
+  console.log('💰 Pricing Debug - Professional info pricing:', creator?.professionalInfo?.pricing);
+
+  // Direct startingPrice field
+  if (creator?.startingPrice !== undefined && creator?.startingPrice !== null) {
+    const sp = creator.startingPrice;
+    if (typeof sp === 'number' && !isNaN(sp) && sp > 0) return sp;
+    if (typeof sp === 'string' && sp.trim()) return sp;
+  }
+
+  // Pricing object structure
+  if (creator?.pricing) {
+    // Basic pricing
+    if (creator.pricing.basic) {
+      const basicPrice = creator.pricing.basic.price || creator.pricing.basic;
+      if (typeof basicPrice === 'number' && !isNaN(basicPrice) && basicPrice > 0) return basicPrice;
+      if (typeof basicPrice === 'string' && basicPrice.trim()) return basicPrice;
+    }
+
+    // Standard pricing
+    if (creator.pricing.standard) {
+      const standardPrice = creator.pricing.standard.price || creator.pricing.standard;
+      if (typeof standardPrice === 'number' && !isNaN(standardPrice) && standardPrice > 0) return standardPrice;
+      if (typeof standardPrice === 'string' && standardPrice.trim()) return standardPrice;
+    }
+
+    // Premium pricing
+    if (creator.pricing.premium) {
+      const premiumPrice = creator.pricing.premium.price || creator.pricing.premium;
+      if (typeof premiumPrice === 'number' && !isNaN(premiumPrice) && premiumPrice > 0) return premiumPrice;
+      if (typeof premiumPrice === 'string' && premiumPrice.trim()) return premiumPrice;
+    }
+
+    // Any other pricing field
+    for (const [key, value] of Object.entries(creator.pricing)) {
+      if (key !== 'basic' && key !== 'standard' && key !== 'premium') {
+        const price = (value as any)?.price || value;
+        if (typeof price === 'number' && !isNaN(price) && price > 0) return price;
+        if (typeof price === 'string' && price.trim()) return price;
+      }
+    }
+  }
+
+  // Alternative pricing fields
+  const altFields = ['price', 'rate', 'cost', 'fee', 'amount'];
+  for (const field of altFields) {
+    if (creator?.[field] !== undefined && creator?.[field] !== null) {
+      const value = creator[field];
+      if (typeof value === 'number' && !isNaN(value) && value > 0) return value;
+      if (typeof value === 'string' && value.trim()) return value;
+    }
+  }
+
+  // Check professionalInfo for pricing
+  if (creator?.professionalInfo?.pricing) {
+    const profPricing = creator.professionalInfo.pricing;
+    if (profPricing.basic) {
+      const basicPrice = profPricing.basic.price || profPricing.basic;
+      if (typeof basicPrice === 'number' && !isNaN(basicPrice) && basicPrice > 0) return basicPrice;
+      if (typeof basicPrice === 'string' && basicPrice.trim()) return basicPrice;
+    }
+  }
+
+  console.log('💰 Pricing Debug - No valid price found, returning undefined');
+  return undefined;
+};
+
 // Category normalization function
 function normalizeCategoryName(name: string): string {
   if (!name) return "Others";
@@ -1399,7 +1471,7 @@ export function Dashboard() {
                     640: { slidesPerView: 2 },
                     1024: { slidesPerView: 3 },
                   }}
-                  className="recommendations-slider"
+                                          className="recommendations-slider"
                 >
                   {recommendations.map((creator) => (
                     <SwiperSlide key={creator.id || creator._id}>
@@ -1415,12 +1487,7 @@ export function Dashboard() {
                         description={creator.description || creator.descriptionFaq?.briefDescription || creator.personalInfo?.bio || creator.bio || ''}
                         rating={computeRating(creator)}
                         reviewCount={computeReviewCount(creator)}
-                        startingPrice={
-                          typeof creator?.startingPrice === 'number' ? creator.startingPrice :
-                          (typeof creator?.startingPrice === 'string' && creator.startingPrice.trim() ? creator.startingPrice :
-                            (typeof creator?.pricing?.standard?.price === 'number' ? creator.pricing.standard.price :
-                              (typeof creator?.pricing?.basic?.price === 'number' ? creator.pricing.basic.price : undefined)))
-                        }
+                        startingPrice={getStartingPrice(creator)}
                         isLiked={false}
                         title={creator.title || creator.professionalInfo?.title || ''}
                         completedProjects={creator.metrics?.profileMetrics?.projectsCompleted || creator.metrics?.completedProjects || 0}
@@ -1471,7 +1538,7 @@ export function Dashboard() {
                     640: { slidesPerView: 2 },
                     1024: { slidesPerView: 3 },
                   }}
-                  className="best-creators-slider"
+                                          className="best-creators-slider"
                 >
                   {bestCreators.map((creator) => (
                     <SwiperSlide key={creator.id || creator._id}>
@@ -1487,12 +1554,7 @@ export function Dashboard() {
                         description={creator.description || creator.descriptionFaq?.briefDescription || creator.personalInfo?.bio || creator.bio || ''}
                         rating={computeRating(creator)}
                         reviewCount={computeReviewCount(creator)}
-                        startingPrice={
-                          typeof creator?.startingPrice === 'number' ? creator.startingPrice :
-                          (typeof creator?.startingPrice === 'string' && creator.startingPrice.trim() ? creator.startingPrice :
-                            (typeof creator?.pricing?.standard?.price === 'number' ? creator.pricing.standard.price :
-                              (typeof creator?.pricing?.basic?.price === 'number' ? creator.pricing.basic.price : undefined)))
-                        }
+                        startingPrice={getStartingPrice(creator)}
                         isLiked={false}
                         title={creator.title || creator.professionalInfo?.title || ''}
                         completedProjects={creator.metrics?.profileMetrics?.projectsCompleted || creator.metrics?.completedProjects || 0}
@@ -1546,7 +1608,7 @@ export function Dashboard() {
                     640: { slidesPerView: 2 },
                     1024: { slidesPerView: 3 },
                   }}
-                  className="tag-recommendations-slider"
+                                          className="tag-recommendations-slider"
                 >
                   {tagBasedRecommendations.map((creator) => (
                     <SwiperSlide key={creator.id || creator._id}>
@@ -1561,12 +1623,7 @@ export function Dashboard() {
                         description={creator.description || creator.descriptionFaq?.briefDescription || creator.personalInfo?.bio || creator.bio || ''}
                         rating={computeRating(creator)}
                         reviewCount={computeReviewCount(creator)}
-                        startingPrice={
-                          typeof creator?.startingPrice === 'number' ? creator.startingPrice :
-                          (typeof creator?.startingPrice === 'string' && creator.startingPrice.trim() ? creator.startingPrice :
-                            (typeof creator?.pricing?.standard?.price === 'number' ? creator.pricing.standard.price :
-                              (typeof creator?.pricing?.basic?.price === 'number' ? creator.pricing.basic.price : undefined)))
-                        }
+                        startingPrice={getStartingPrice(creator)}
                         isLiked={false}
                         title={creator.title || creator.professionalInfo?.title || ''}
                         completedProjects={creator.metrics?.profileMetrics?.projectsCompleted || creator.metrics?.completedProjects || 0}
@@ -1617,7 +1674,7 @@ export function Dashboard() {
                     640: { slidesPerView: 2 },
                     1024: { slidesPerView: 3 },
                   }}
-                  className="content-type-recommendations-slider"
+                                          className="content-type-recommendations-slider"
                 >
                   {contentTypeBasedRecommendations.map((creator) => (
                     <SwiperSlide key={creator.id || creator._id}>
@@ -1632,12 +1689,7 @@ export function Dashboard() {
                         description={creator.description || creator.descriptionFaq?.briefDescription || creator.personalInfo?.bio || creator.bio || ''}
                         rating={computeRating(creator)}
                         reviewCount={computeReviewCount(creator)}
-                        startingPrice={
-                          typeof creator?.startingPrice === 'number' ? creator.startingPrice :
-                          (typeof creator?.startingPrice === 'string' && creator.startingPrice.trim() ? creator.startingPrice :
-                            (typeof creator?.pricing?.standard?.price === 'number' ? creator.pricing.standard.price :
-                              (typeof creator?.pricing?.basic?.price === 'number' ? creator.pricing.basic.price : undefined)))
-                        }
+                        startingPrice={getStartingPrice(creator)}
                         isLiked={false}
                         title={creator.title || creator.professionalInfo?.title || ''}
                         completedProjects={creator.metrics?.profileMetrics?.projectsCompleted || creator.metrics?.completedProjects || 0}
@@ -1688,7 +1740,7 @@ export function Dashboard() {
                     640: { slidesPerView: 2 },
                     1024: { slidesPerView: 3 },
                   }}
-                  className="search-recommendations-slider"
+                                          className="search-recommendations-slider"
                 >
                   {searchBasedRecommendations.map((creator) => (
                     <SwiperSlide key={creator.id || creator._id}>
@@ -1701,12 +1753,7 @@ export function Dashboard() {
                         description={creator.description || creator.descriptionFaq?.briefDescription || creator.personalInfo?.bio || creator.bio || ''}
                         rating={(creator.metrics?.ratings?.average ?? creator.rating ?? 0)}
                         reviewCount={(Array.isArray(creator.reviews) ? creator.reviews.length : (typeof creator.metrics?.ratings?.count === 'number' ? creator.metrics.ratings.count : (typeof creator.reviewCount === 'number' ? creator.reviewCount : 0)))}
-                        startingPrice={
-                          typeof creator?.startingPrice === 'number' ? creator.startingPrice :
-                          (typeof creator?.startingPrice === 'string' && creator.startingPrice.trim() ? creator.startingPrice :
-                            (typeof creator?.pricing?.standard?.price === 'number' ? creator.pricing.standard.price :
-                              (typeof creator?.pricing?.basic?.price === 'number' ? creator.pricing.basic.price : undefined)))
-                        }
+                        startingPrice={getStartingPrice(creator)}
                         isLiked={false}
                         title={creator.title || creator.professionalInfo?.title || ''}
                         completedProjects={creator.metrics?.profileMetrics?.projectsCompleted || creator.metrics?.completedProjects || 0}
@@ -1830,7 +1877,7 @@ export function Dashboard() {
                         description: profile.descriptionFaq?.briefDescription || '',
                         rating: profile.metrics?.ratings?.average || 0,
                         reviewCount: profile.metrics?.ratings?.count || 0,
-                        startingPrice: profile.pricing?.basic?.price ? `₹${profile.pricing.basic.price}` : undefined,
+                        startingPrice: getStartingPrice(profile),
                         isLiked: false,
                         title: profile.professionalInfo?.title || '',
                         completedProjects: match.metrics?.profileMetrics?.projectsCompleted || match.metrics?.completedProjects || 0,
@@ -1883,7 +1930,7 @@ export function Dashboard() {
                         description={creator.description || creator.descriptionFaq?.briefDescription || ''}
                         rating={(creator.metrics?.ratings?.average ?? creator.rating ?? 0)}
                         reviewCount={(Array.isArray(creator.reviews) ? creator.reviews.length : (typeof creator.metrics?.ratings?.count === 'number' ? creator.metrics.ratings.count : (typeof creator.reviewCount === 'number' ? creator.reviewCount : 0)))}
-                        startingPrice={creator.startingPrice || (creator.pricing?.basic?.price ? `₹${creator.pricing.basic.price}` : undefined)}
+                        startingPrice={getStartingPrice(creator)}
                         isLiked={false}
                         title={creator.title || creator.professionalInfo?.title || ''}
                         completedProjects={creator.metrics?.profileMetrics?.projectsCompleted || creator.metrics?.completedProjects || 0}

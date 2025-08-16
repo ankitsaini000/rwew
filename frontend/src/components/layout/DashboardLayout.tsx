@@ -548,10 +548,12 @@ export const DashboardLayout = ({ children }: { children: React.ReactNode }) => 
             {children}
           </main>
           
-          {/* Footer - not under sidebar in desktop view */}
-          <div className="lg:ml-0">
-            <Footer />
-          </div>
+          {/* Footer - not under sidebar in desktop view, hidden on messages page */}
+          {!pathname.includes('/messages') && (
+            <div className="lg:ml-0">
+              <Footer />
+            </div>
+          )}
         </div>
       </div>
     </div>

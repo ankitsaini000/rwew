@@ -159,12 +159,14 @@ export const TopInfluencers = () => {
             {/* Mobile Horizontal Scroll - Only on small screens */}
             <div 
               id="creators-container"
-              className="sm:hidden flex overflow-x-auto gap-4 pb-6 hide-scrollbar snap-x snap-mandatory touch-pan-x touch-scroll"
+              className="sm:hidden flex overflow-x-auto gap-4 pb-6 hide-scrollbar snap-x snap-mandatory touch-pan-x touch-scroll mobile-smooth-scroll"
+              style={{ overscrollBehavior: 'contain', WebkitOverflowScrolling: 'touch' }}
             >
               {creators.map((creator) => (
                 <div 
                   key={creator.id || creator._id || creator.username} 
                   className="flex-shrink-0 w-[280px] snap-start"
+                  style={{ scrollSnapAlign: 'start' }}
                 >
                   <CreatorCard
                     id={creator.id || creator._id || creator.username}
